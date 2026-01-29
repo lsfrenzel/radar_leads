@@ -63,25 +63,46 @@ HTML_TEMPLATE = """
                 const data = await response.json();
                 
                 if (data.results && data.results.length > 0) {
-                    let html = '<h3>Oportunidades em São Paulo</h3><div class="row">';
+                    let html = `
+                        <div class="card p-4">
+                            <h3 class="mb-4">Inteligência de Mercado: São Paulo (Estratificado)</h3>
+                            <div class="table-responsive">
+                                <table class="table table-hover">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>Cidade</th>
+                                            <th>Bairro/Distrito</th>
+                                            <th>Região</th>
+                                            <th>Demanda (%)</th>
+                                            <th>Tendência</th>
+                                            <th>Intensidade</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                    `;
+                    
                     data.results.forEach(item => {
+                        const trendIcon = item.trend === 'up' ? '↗️' : (item.trend === 'down' ? '↘️' : '➡️');
+                        const intensityClass = item.intensity === 'high' ? 'text-danger' : (item.intensity === 'medium' ? 'text-warning' : 'text-success');
+                        
                         html += `
-                            <div class="col-md-6">
-                                <div class="card p-3">
-                                    <h5>${item.location ? (item.location.city + ' (' + item.location.region + ')') : 'Localização Indeterminada'}</h5>
-                                    <p class="mb-1">"${item.text}"</p>
-                                    <div class="d-flex justify-content-between align-items-center">
-                                        <small class="text-muted">${item.source} | ${item.classification}</small>
-                                        <div>
-                                            <span class="badge bg-info text-dark">Demanda na Região: ${item.region_demand_pct}%</span>
-                                            <span class="intent-high ms-2">Score: ${(item.intent_score * 100).toFixed(0)}%</span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
+                            <tr>
+                                <td><strong>${item.city}</strong></td>
+                                <td>${item.neighborhood}</td>
+                                <td><small class="text-muted">${item.region}</small></td>
+                                <td class="fw-bold text-primary">${item.demand_percentage}%</td>
+                                <td>${trendIcon} ${item.trend === 'up' ? 'Alta' : (item.trend === 'down' ? 'Queda' : 'Estável')}</td>
+                                <td class="${intensityClass} fw-bold">${item.intensity.toUpperCase()}</td>
+                            </tr>
                         `;
                     });
-                    html += '</div>';
+                    
+                    html += `
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    `;
                     resultsDiv.innerHTML = html;
                 } else {
                     resultsDiv.innerHTML = '<div class="alert alert-info">Nenhuma intenção clara detectada para este produto no período.</div>';
