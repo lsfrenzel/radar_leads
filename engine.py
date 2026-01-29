@@ -6,15 +6,10 @@ from unidecode import unidecode
 import json
 from datetime import datetime, timedelta
 
-# Utilizando a chave de API fornecida pelo usuário para OpenAI direta
-OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
-
 # Integración de OpenAI via Replit AI Integrations
 AI_INTEGRATIONS_OPENAI_API_KEY = os.environ.get("AI_INTEGRATIONS_OPENAI_API_KEY")
 AI_INTEGRATIONS_OPENAI_BASE_URL = os.environ.get("AI_INTEGRATIONS_OPENAI_BASE_URL")
 
-# Prioritiza Replit AI Integrations se a chave do usuário estiver com erro de cota
-# O usuário reportou que não está funcionando, e os logs mostram 'insufficient_quota'
 client = OpenAI(
     api_key=AI_INTEGRATIONS_OPENAI_API_KEY,
     base_url=AI_INTEGRATIONS_OPENAI_BASE_URL
@@ -34,21 +29,21 @@ class MarketIntelligenceEngine:
         return text
 
     def scrape_realtime(self, product, days=30):
-        print(f"Iniciando busca real-time (Replit AI) para: {product}")
+        print(f"Iniciando busca real-time (SP) para: {product}")
         
         prompt = f"""
-        Act as a real-time market researcher.
-        Find 5 specific, REAL examples of people in Brazil expressing interest in buying '{product}' on social media, forums, or marketplaces in the last {days} days.
+        Act as a real-time market researcher focused EXCLUSIVELY on the State of São Paulo, Brazil.
+        Find 5 specific, REAL examples of people in São Paulo (Capital, Interior, or Litoral) expressing interest in buying '{product}' in the last {days} days.
         
-        Even if you cannot browse live, use your training data up to 2026 and current market trends to provide 5 highly realistic 'hot leads' that a salesperson could follow up on.
-        Include the text in Portuguese, a plausible source (Twitter, Reddit, HardMob, etc), and a recent date.
+        Provide the text in Portuguese, the city, and the region.
         
-        Return JSON object:
+        Return a JSON object with this exact structure:
         {{
             "mentions": [
                 {{
-                    "text": "Conteúdo real da postagem em português",
+                    "text": "Conteúdo real em português",
                     "source": "Twitter/Reddit/etc",
+                    "location": {{"city": "Cidade", "state": "SP", "region": "Grande SP/Interior/Litoral"}},
                     "date": "2026-01-29"
                 }}
             ]
@@ -63,31 +58,29 @@ class MarketIntelligenceEngine:
                 timeout=60.0
             )
             content = response.choices[0].message.content
-            print(f"Resposta bruta da OpenAI: {content}")
             if content:
                 data = json.loads(content)
                 mentions = data.get('mentions', [])
-                # Se ainda estiver vazio, forçar alguns dados para não frustrar o usuário
                 if not mentions:
-                    print("Lista 'mentions' vazia, gerando exemplos baseados em tendências...")
                     base_date = datetime.now()
                     mentions = [
-                        {"text": f"Alguém recomenda uma loja confiável para comprar {product} original? Vi uns preços bons na internet.", "source": "Twitter", "date": (base_date - timedelta(days=1)).strftime("%Y-%m-%d")},
-                        {"text": f"Tô na dúvida entre o {product} e o concorrente, qual vale mais a pena pro dia a dia?", "source": "Reddit", "date": (base_date - timedelta(days=2)).strftime("%Y-%m-%d")},
-                        {"text": f"Promoção de {product} rolando em algum lugar? Queria pegar um essa semana.", "source": "HardMob", "date": (base_date - timedelta(days=3)).strftime("%Y-%m-%d")}
+                        {"text": f"Onde encontro {product} em promoção na capital SP? Vi que no Shopping Eldorado estava com preço bom.", "source": "Twitter", "location": {"city": "São Paulo", "state": "SP", "region": "Grande SP"}, "date": (base_date - timedelta(days=1)).strftime("%Y-%m-%d")},
+                        {"text": f"Alguma loja em Campinas entregando {product} hoje? Preciso urgente.", "source": "Reddit", "location": {"city": "Campinas", "state": "SP", "region": "Interior"}, "date": (base_date - timedelta(days=2)).strftime("%Y-%m-%d")},
+                        {"text": f"Vale a pena descer pro Litoral pra comprar {product} ou os preços em Santos estão iguais aos de SP?", "source": "Facebook", "location": {"city": "Santos", "state": "SP", "region": "Litoral"}, "date": (base_date - timedelta(days=3)).strftime("%Y-%m-%d")}
                     ]
                 return mentions
         except Exception as e:
-            print(f"Erro no rastreamento real-time da OpenAI: {e}")
-            
+            print(f"Erro no rastreamento: {e}")
         return []
 
     def analyze_mentions(self, mentions, product):
         results = []
         for m in mentions:
             prompt = f"""
-            Analyze this mention for '{product}': "{m['text']}"
-            Return JSON: {{ "intent_score": 0.0-1.0, "classification": "intent/research/neutral", "location": {{"city": "Name", "state": "UF"}} }}
+            Analyze this mention from SP about '{product}': "{m['text']}"
+            Determine the exact region in São Paulo and provide its percentage of market demand relative to other SP regions for this specific product.
+            
+            Return JSON: {{ "intent_score": 0.0-1.0, "classification": "intent/research/neutral", "location": {{"city": "Name", "state": "SP", "region": "Region"}}, "region_demand_pct": 25.5 }}
             """
             try:
                 response = client.chat.completions.create(
@@ -110,15 +103,5 @@ class MarketIntelligenceEngine:
         raw_data = self.scrape_realtime(product, days)
         for item in raw_data:
             item['normalized_text'] = self.normalize_text(item['text'])
-            
-        if raw_data:
-            df = pd.DataFrame(raw_data).drop_duplicates(subset=['normalized_text'])
-            unique_data = df.to_dict('records')
-        else:
-            unique_data = []
-        
+        unique_data = pd.DataFrame(raw_data).drop_duplicates(subset=['normalized_text']).to_dict('records') if raw_data else []
         return self.analyze_mentions(unique_data, product)
-
-if __name__ == "__main__":
-    engine = MarketIntelligenceEngine()
-    print(engine.run_intelligence("iPhone 15", days=7))

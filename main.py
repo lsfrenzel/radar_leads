@@ -63,16 +63,19 @@ HTML_TEMPLATE = """
                 const data = await response.json();
                 
                 if (data.results && data.results.length > 0) {
-                    let html = '<h3>Oportunidades Encontradas</h3><div class="row">';
+                    let html = '<h3>Oportunidades em São Paulo</h3><div class="row">';
                     data.results.forEach(item => {
                         html += `
                             <div class="col-md-6">
                                 <div class="card p-3">
-                                    <h5>${item.location ? (item.location.city + ' - ' + item.location.state) : 'Localização Indeterminada'}</h5>
+                                    <h5>${item.location ? (item.location.city + ' (' + item.location.region + ')') : 'Localização Indeterminada'}</h5>
                                     <p class="mb-1">"${item.text}"</p>
-                                    <div class="d-flex justify-content-between">
+                                    <div class="d-flex justify-content-between align-items-center">
                                         <small class="text-muted">${item.source} | ${item.classification}</small>
-                                        <span class="intent-high">Score: ${(item.intent_score * 100).toFixed(0)}%</span>
+                                        <div>
+                                            <span class="badge bg-info text-dark">Demanda na Região: ${item.region_demand_pct}%</span>
+                                            <span class="intent-high ms-2">Score: ${(item.intent_score * 100).toFixed(0)}%</span>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
