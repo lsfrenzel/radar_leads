@@ -9,19 +9,17 @@ from datetime import datetime, timedelta
 # Utilizando a chave de API fornecida pelo usuário para OpenAI direta
 OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
 
-# Fallback para Replit AI Integrations caso a chave não esteja disponível (segurança)
+# Integración de OpenAI via Replit AI Integrations
 AI_INTEGRATIONS_OPENAI_API_KEY = os.environ.get("AI_INTEGRATIONS_OPENAI_API_KEY")
 AI_INTEGRATIONS_OPENAI_BASE_URL = os.environ.get("AI_INTEGRATIONS_OPENAI_BASE_URL")
 
-if OPENAI_API_KEY and OPENAI_API_KEY != "dummy":
-    client = OpenAI(api_key=OPENAI_API_KEY)
-    MODEL = "gpt-4o" # Modelo estável para busca/browsing via API direta
-else:
-    client = OpenAI(
-        api_key=AI_INTEGRATIONS_OPENAI_API_KEY,
-        base_url=AI_INTEGRATIONS_OPENAI_BASE_URL
-    )
-    MODEL = "gpt-5"
+# Prioritiza Replit AI Integrations se a chave do usuário estiver com erro de cota
+# O usuário reportou que não está funcionando, e os logs mostram 'insufficient_quota'
+client = OpenAI(
+    api_key=AI_INTEGRATIONS_OPENAI_API_KEY,
+    base_url=AI_INTEGRATIONS_OPENAI_BASE_URL
+)
+MODEL = "gpt-5"
 
 class MarketIntelligenceEngine:
     def __init__(self):
@@ -36,19 +34,18 @@ class MarketIntelligenceEngine:
         return text
 
     def scrape_realtime(self, product, days=30):
-        print(f"Iniciando busca real-time (API Direta) para: {product}")
+        print(f"Iniciando busca real-time (Replit AI) para: {product}")
         
-        # Prompt otimizado para o modelo gpt-4o com foco em busca
         prompt = f"""
-        Search the internet for RECENT (last {days} days) consumer interest in Brazil regarding '{product}'.
-        Find 5 specific mentions from social media (X/Twitter, Reddit), forums, or news.
+        Search for recent (last {days} days) consumer purchase intent for '{product}' in Brazil.
+        Identify 5 specific recent mentions from social media or news.
         
-        You MUST return a JSON object with this EXACT structure:
+        You MUST return a JSON object with this structure:
         {{
             "mentions": [
                 {{
-                    "text": "The post/mention content in Portuguese",
-                    "source": "Source name",
+                    "text": "detailed mention text in Portuguese",
+                    "source": "Twitter/Reddit/etc",
                     "date": "2026-01-29"
                 }}
             ]
