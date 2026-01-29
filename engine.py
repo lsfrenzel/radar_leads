@@ -62,6 +62,11 @@ class MarketIntelligenceEngine:
             """
             
             try:
+                response = client.chat.completions.create(
+                    model=self.model,
+                    messages=[{"role": "user", "content": prompt}],
+                    response_format={"type": "json_object"}
+                )
                 content = response.choices[0].message.content
                 if content is None:
                     continue
