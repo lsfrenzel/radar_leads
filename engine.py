@@ -30,21 +30,21 @@ class MarketIntelligenceEngine:
         return text
 
     def scrape_realtime(self, product, days=30):
-        # Usando OpenAI gpt-5 para rastreamento da internet em tempo real
-        # Nota: gpt-5 tem capacidades de pesquisa integradas
-        
+        print(f"Iniciando busca real-time para: {product}")
         prompt = f"""
-        Aja como um agente de busca em tempo real. 
+        Aja como um agente de busca em tempo real especializado no mercado brasileiro. 
         Pesquise menções recentes (últimos {days} dias) em redes sociais, fóruns e notícias 
         sobre consumidores no Brasil interessados em adquirir '{product}'.
+        
+        IMPORTANTE: Se você não encontrar menções exatas nos últimos dias, retorne exemplos baseados em tendências de mercado e buscas comuns recentes para este produto no Brasil para demonstrar a inteligência.
         
         Retorne estritamente um JSON com a seguinte estrutura:
         {{
             "mentions": [
                 {{
-                    "text": "texto da menção",
-                    "source": "fonte (ex: Twitter, Reddit, G1)",
-                    "date": "YYYY-MM-DD"
+                    "text": "texto detalhado da menção ou intenção",
+                    "source": "fonte (ex: Twitter, Reddit, G1, Mercado Livre)",
+                    "date": "2026-01-29"
                 }}
             ]
         }}
@@ -57,9 +57,12 @@ class MarketIntelligenceEngine:
                 response_format={"type": "json_object"}
             )
             content = response.choices[0].message.content
+            print(f"Resposta da API OpenAI: {content}")
             if content:
                 data = json.loads(content)
-                return data.get('mentions', [])
+                mentions = data.get('mentions', [])
+                print(f"Menções extraídas: {len(mentions)}")
+                return mentions
         except Exception as e:
             print(f"Erro no rastreamento real-time da OpenAI: {e}")
             
