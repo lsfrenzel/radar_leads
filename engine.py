@@ -6,20 +6,26 @@ from unidecode import unidecode
 import json
 from datetime import datetime, timedelta
 
-# Integración de OpenAI via Replit AI Integrations
-# the newest OpenAI model is "gpt-5" which was released August 7, 2025.
-# do not change this unless explicitly requested by the user
+# Utilizando a chave de API fornecida pelo usuário para OpenAI direta
+OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
+
+# Fallback para Replit AI Integrations caso a chave não esteja disponível (segurança)
 AI_INTEGRATIONS_OPENAI_API_KEY = os.environ.get("AI_INTEGRATIONS_OPENAI_API_KEY")
 AI_INTEGRATIONS_OPENAI_BASE_URL = os.environ.get("AI_INTEGRATIONS_OPENAI_BASE_URL")
 
-client = OpenAI(
-    api_key=AI_INTEGRATIONS_OPENAI_API_KEY,
-    base_url=AI_INTEGRATIONS_OPENAI_BASE_URL
-)
+if OPENAI_API_KEY and OPENAI_API_KEY != "dummy":
+    client = OpenAI(api_key=OPENAI_API_KEY)
+    MODEL = "gpt-4o" # Modelo estável para busca/browsing via API direta
+else:
+    client = OpenAI(
+        api_key=AI_INTEGRATIONS_OPENAI_API_KEY,
+        base_url=AI_INTEGRATIONS_OPENAI_BASE_URL
+    )
+    MODEL = "gpt-5"
 
 class MarketIntelligenceEngine:
     def __init__(self):
-        self.model = "gpt-5"
+        self.model = MODEL
 
     def normalize_text(self, text):
         if not text: return ""
@@ -30,18 +36,19 @@ class MarketIntelligenceEngine:
         return text
 
     def scrape_realtime(self, product, days=30):
-        print(f"Iniciando busca real-time para: {product}")
-        # Simplificando ao máximo para garantir que a IA entenda a necessidade de dados reais
-        prompt = f"""
-        Find 5 real recent examples of people in Brazil looking to buy '{product}' on social media, forums or marketplaces from the last {days} days.
-        Provide the text, source, and date. If you can't find exact matches, look for general market demand signals for this product.
+        print(f"Iniciando busca real-time (API Direta) para: {product}")
         
-        Return JSON format:
+        # Prompt otimizado para o modelo gpt-4o com foco em busca
+        prompt = f"""
+        Search the internet for RECENT (last {days} days) consumer interest in Brazil regarding '{product}'.
+        Find 5 specific mentions from social media (X/Twitter, Reddit), forums, or news.
+        
+        You MUST return a JSON object with this EXACT structure:
         {{
             "mentions": [
                 {{
-                    "text": "text of the post/mention",
-                    "source": "Twitter/Facebook/Reddit/Marketplace",
+                    "text": "The post/mention content in Portuguese",
+                    "source": "Source name",
                     "date": "2026-01-29"
                 }}
             ]
@@ -53,16 +60,13 @@ class MarketIntelligenceEngine:
                 model=self.model,
                 messages=[{"role": "user", "content": prompt}],
                 response_format={"type": "json_object"},
-                timeout=45.0
+                timeout=60.0
             )
             content = response.choices[0].message.content
             print(f"Resposta bruta da OpenAI: {content}")
             if content:
                 data = json.loads(content)
-                mentions = data.get('mentions', [])
-                if not mentions:
-                    print("Lista 'mentions' vazia no JSON")
-                return mentions
+                return data.get('mentions', [])
         except Exception as e:
             print(f"Erro no rastreamento real-time da OpenAI: {e}")
             
@@ -71,19 +75,10 @@ class MarketIntelligenceEngine:
     def analyze_mentions(self, mentions, product):
         results = []
         for m in mentions:
-            # Baixando o rigor para garantir que resultados apareçam
             prompt = f"""
-            Analyze the following mention about '{product}':
-            Text: "{m['text']}"
-            
-            Return JSON with:
-            1. intent_score: (0 to 1) active interest.
-            2. classification: "intent", "research", "comparison", "neutral".
-            3. location: {{"city": "City Name", "state": "UF"}}
-            
-            Be helpful and identify even subtle interest.
+            Analyze this mention for '{product}': "{m['text']}"
+            Return JSON: {{ "intent_score": 0.0-1.0, "classification": "intent/research/neutral", "location": {{"city": "Name", "state": "UF"}} }}
             """
-            
             try:
                 response = client.chat.completions.create(
                     model=self.model,
@@ -95,32 +90,24 @@ class MarketIntelligenceEngine:
                 if content:
                     analysis = json.loads(content)
                     m.update(analysis)
-                    # Baixando o threshold de 0.3 para 0.1 para não filtrar nada relevante
                     if m.get('intent_score', 0) > 0.1:
                         results.append(m)
             except Exception as e:
-                print(f"Error analyzing mention: {e}")
-                
+                print(f"Error analyzing: {e}")
         return results
 
     def run_intelligence(self, product, keywords=None, days=30):
-        # Agora usamos a capacidade de busca da OpenAI gpt-5
         raw_data = self.scrape_realtime(product, days)
-        
-        # Normalização
         for item in raw_data:
             item['normalized_text'] = self.normalize_text(item['text'])
             
-        # Deduplicação básica
         if raw_data:
             df = pd.DataFrame(raw_data).drop_duplicates(subset=['normalized_text'])
             unique_data = df.to_dict('records')
         else:
             unique_data = []
         
-        # Análise NLP
-        processed_data = self.analyze_mentions(unique_data, product)
-        return processed_data
+        return self.analyze_mentions(unique_data, product)
 
 if __name__ == "__main__":
     engine = MarketIntelligenceEngine()
