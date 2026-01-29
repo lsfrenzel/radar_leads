@@ -62,13 +62,10 @@ class MarketIntelligenceEngine:
             """
             
             try:
-                response = client.chat.completions.create(
-                    model=self.model,
-                    messages=[{"role": "user", "content": prompt}],
-                    response_format={ "type": "json_object" },
-                    max_completion_tokens=500
-                )
-                analysis = json.loads(response.choices[0].message.content)
+                content = response.choices[0].message.content
+                if content is None:
+                    continue
+                analysis = json.loads(content)
                 
                 m.update(analysis)
                 if m.get('intent_score', 0) > 0.3: # Threshold configurável
