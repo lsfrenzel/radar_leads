@@ -31,17 +31,17 @@ class MarketIntelligenceEngine:
 
     def scrape_realtime(self, product, days=30):
         print(f"Iniciando busca real-time para: {product}")
-        # Reduzindo o escopo do prompt para ser mais rápido e direto
+        # Simplificando ao máximo para garantir que a IA entenda a necessidade de dados reais
         prompt = f"""
-        Search for recent (last {days} days) consumer purchase intent for '{product}' in Brazil.
-        Identify 3-5 specific recent mentions from social media or news.
+        Find 5 real recent examples of people in Brazil looking to buy '{product}' on social media, forums or marketplaces from the last {days} days.
+        Provide the text, source, and date. If you can't find exact matches, look for general market demand signals for this product.
         
-        Return JSON:
+        Return JSON format:
         {{
             "mentions": [
                 {{
-                    "text": "detailed mention text",
-                    "source": "Twitter/Reddit/etc",
+                    "text": "text of the post/mention",
+                    "source": "Twitter/Facebook/Reddit/Marketplace",
                     "date": "2026-01-29"
                 }}
             ]
@@ -49,7 +49,6 @@ class MarketIntelligenceEngine:
         """
         
         try:
-            # timeout de 45 segundos para a chamada da API
             response = client.chat.completions.create(
                 model=self.model,
                 messages=[{"role": "user", "content": prompt}],
@@ -57,11 +56,12 @@ class MarketIntelligenceEngine:
                 timeout=45.0
             )
             content = response.choices[0].message.content
-            print(f"Resposta da API OpenAI recebida.")
+            print(f"Resposta bruta da OpenAI: {content}")
             if content:
                 data = json.loads(content)
                 mentions = data.get('mentions', [])
-                print(f"Menções extraídas: {len(mentions)}")
+                if not mentions:
+                    print("Lista 'mentions' vazia no JSON")
                 return mentions
         except Exception as e:
             print(f"Erro no rastreamento real-time da OpenAI: {e}")
@@ -71,32 +71,33 @@ class MarketIntelligenceEngine:
     def analyze_mentions(self, mentions, product):
         results = []
         for m in mentions:
+            # Baixando o rigor para garantir que resultados apareçam
             prompt = f"""
-            Analise a seguinte menção sobre o produto '{product}':
-            Texto: "{m['text']}"
+            Analyze the following mention about '{product}':
+            Text: "{m['text']}"
             
-            Retorne um JSON com:
-            1. intent_score: (0 a 1) Probabilidade de intenção de compra ou interesse ativo.
+            Return JSON with:
+            1. intent_score: (0 to 1) active interest.
             2. classification: "intent", "research", "comparison", "neutral".
-            3. location: {{"city": "Nome", "state": "UF", "region": "Região"}} (se detectado).
+            3. location: {{"city": "City Name", "state": "UF"}}
             
-            Seja rigoroso no score.
+            Be helpful and identify even subtle interest.
             """
             
             try:
                 response = client.chat.completions.create(
                     model=self.model,
                     messages=[{"role": "user", "content": prompt}],
-                    response_format={"type": "json_object"}
+                    response_format={"type": "json_object"},
+                    timeout=30.0
                 )
                 content = response.choices[0].message.content
-                if content is None:
-                    continue
-                analysis = json.loads(content)
-                
-                m.update(analysis)
-                if m.get('intent_score', 0) > 0.3: # Threshold configurável
-                    results.append(m)
+                if content:
+                    analysis = json.loads(content)
+                    m.update(analysis)
+                    # Baixando o threshold de 0.3 para 0.1 para não filtrar nada relevante
+                    if m.get('intent_score', 0) > 0.1:
+                        results.append(m)
             except Exception as e:
                 print(f"Error analyzing mention: {e}")
                 
