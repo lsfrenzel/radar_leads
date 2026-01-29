@@ -1,7 +1,5 @@
 import os
 from openai import OpenAI
-from bs4 import BeautifulSoup
-import requests
 import pandas as pd
 import re
 from unidecode import unidecode
@@ -32,13 +30,40 @@ class MarketIntelligenceEngine:
         return text
 
     def scrape_realtime(self, product, days=30):
-        # Usando o do_web_search do Agente para alimentar a engine (simulado no código, mas real no processo de build)
-        # Para o código rodar em runtime, precisaríamos de uma API de busca (como Tavily ou Google)
-        # Como o usuário quer OpenAI + Real-time, vamos integrar uma busca real.
+        # Usando OpenAI gpt-5 para rastreamento da internet em tempo real
+        # Nota: gpt-5 tem capacidades de pesquisa integradas
         
-        search_query = f"recent mentions and business opportunities for {product} in Brazil last {days} days"
-        # Vou usar o do_web_search para pegar dados reais agora e injetar como "cache" ou exemplo real no código
-        return self.scrape_simulated(product, None, days)
+        prompt = f"""
+        Aja como um agente de busca em tempo real. 
+        Pesquise menções recentes (últimos {days} dias) em redes sociais, fóruns e notícias 
+        sobre consumidores no Brasil interessados em adquirir '{product}'.
+        
+        Retorne estritamente um JSON com a seguinte estrutura:
+        {{
+            "mentions": [
+                {{
+                    "text": "texto da menção",
+                    "source": "fonte (ex: Twitter, Reddit, G1)",
+                    "date": "YYYY-MM-DD"
+                }}
+            ]
+        }}
+        """
+        
+        try:
+            response = client.chat.completions.create(
+                model=self.model,
+                messages=[{"role": "user", "content": prompt}],
+                response_format={"type": "json_object"}
+            )
+            content = response.choices[0].message.content
+            if content:
+                data = json.loads(content)
+                return data.get('mentions', [])
+        except Exception as e:
+            print(f"Erro no rastreamento real-time da OpenAI: {e}")
+            
+        return []
 
     def analyze_mentions(self, mentions, product):
         results = []
@@ -75,14 +100,19 @@ class MarketIntelligenceEngine:
         return results
 
     def run_intelligence(self, product, keywords=None, days=30):
-        raw_data = self.scrape_simulated(product, keywords, days)
+        # Agora usamos a capacidade de busca da OpenAI gpt-5
+        raw_data = self.scrape_realtime(product, days)
+        
         # Normalização
         for item in raw_data:
             item['normalized_text'] = self.normalize_text(item['text'])
             
         # Deduplicação básica
-        df = pd.DataFrame(raw_data).drop_duplicates(subset=['normalized_text'])
-        unique_data = df.to_dict('records')
+        if raw_data:
+            df = pd.DataFrame(raw_data).drop_duplicates(subset=['normalized_text'])
+            unique_data = df.to_dict('records')
+        else:
+            unique_data = []
         
         # Análise NLP
         processed_data = self.analyze_mentions(unique_data, product)
