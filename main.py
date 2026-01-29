@@ -98,15 +98,19 @@ def index():
 
 @app.route('/analyze', methods=['POST'])
 def analyze():
-    data = request.json
-    product = data.get('product')
-    days = data.get('days', 30)
-    
-    if not product:
-        return jsonify({"error": "Product is required"}), 400
+    try:
+        data = request.json
+        product = data.get('product')
+        days = data.get('days', 30)
         
-    results = engine.run_intelligence(product, days=days)
-    return jsonify({"results": results})
+        if not product:
+            return jsonify({"error": "Product is required"}), 400
+            
+        results = engine.run_intelligence(product, days=days)
+        return jsonify({"results": results})
+    except Exception as e:
+        print(f"Erro na rota /analyze: {e}")
+        return jsonify({"error": str(e), "results": []}), 500
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)

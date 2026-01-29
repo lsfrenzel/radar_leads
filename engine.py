@@ -31,19 +31,17 @@ class MarketIntelligenceEngine:
 
     def scrape_realtime(self, product, days=30):
         print(f"Iniciando busca real-time para: {product}")
+        # Reduzindo o escopo do prompt para ser mais rápido e direto
         prompt = f"""
-        Aja como um agente de busca em tempo real especializado no mercado brasileiro. 
-        Pesquise menções recentes (últimos {days} dias) em redes sociais, fóruns e notícias 
-        sobre consumidores no Brasil interessados em adquirir '{product}'.
+        Search for recent (last {days} days) consumer purchase intent for '{product}' in Brazil.
+        Identify 3-5 specific recent mentions from social media or news.
         
-        IMPORTANTE: Se você não encontrar menções exatas nos últimos dias, retorne exemplos baseados em tendências de mercado e buscas comuns recentes para este produto no Brasil para demonstrar a inteligência.
-        
-        Retorne estritamente um JSON com a seguinte estrutura:
+        Return JSON:
         {{
             "mentions": [
                 {{
-                    "text": "texto detalhado da menção ou intenção",
-                    "source": "fonte (ex: Twitter, Reddit, G1, Mercado Livre)",
+                    "text": "detailed mention text",
+                    "source": "Twitter/Reddit/etc",
                     "date": "2026-01-29"
                 }}
             ]
@@ -51,13 +49,15 @@ class MarketIntelligenceEngine:
         """
         
         try:
+            # timeout de 45 segundos para a chamada da API
             response = client.chat.completions.create(
                 model=self.model,
                 messages=[{"role": "user", "content": prompt}],
-                response_format={"type": "json_object"}
+                response_format={"type": "json_object"},
+                timeout=45.0
             )
             content = response.choices[0].message.content
-            print(f"Resposta da API OpenAI: {content}")
+            print(f"Resposta da API OpenAI recebida.")
             if content:
                 data = json.loads(content)
                 mentions = data.get('mentions', [])
