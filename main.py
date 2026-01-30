@@ -796,9 +796,114 @@ HTML_TEMPLATE = """
 
             updateDashboard(data);
             } catch (err) {
+                console.error(err);
                 resultsDiv.innerHTML = '<div class="alert alert-danger">Erro ao processar inteligência.</div>';
             }
         });
+
+        async function exportTrendsToPDF() {
+            const { jsPDF } = window.jspdf;
+            const doc = jsPDF('p', 'mm', 'a4');
+            const pageWidth = doc.internal.pageSize.getWidth();
+            doc.setFillColor(2, 6, 23);
+            doc.rect(0, 0, pageWidth, 50, 'F');
+            doc.setTextColor(255, 255, 255);
+            doc.setFont("helvetica", "bold");
+            doc.setFontSize(26);
+            doc.text("RADAR DE TENDÊNCIAS SP", 20, 25);
+            doc.setFont("helvetica", "normal");
+            doc.setFontSize(10);
+            doc.setTextColor(148, 163, 184);
+            doc.text("Inteligência de Mercado em Tempo Real", 20, 32);
+            doc.text(`Relatório Gerado em: ${new Date().toLocaleString('pt-BR')}`, 20, 38);
+            
+            let y = 65;
+            doc.setTextColor(15, 23, 42);
+            doc.setFontSize(16);
+            doc.setFont("helvetica", "bold");
+            doc.text("Produtos em Alta", 20, y);
+            y += 10;
+            
+            if (window.lastTrendsData) {
+                window.lastTrendsData.hot_products.forEach(p => {
+                    doc.setFontSize(12);
+                    doc.text(`${p.name} (+${p.growth}%)`, 20, y);
+                    doc.setFontSize(10);
+                    doc.setFont("helvetica", "normal");
+                    doc.text(`Categoria: ${p.category}`, 20, y + 5);
+                    y += 15;
+                });
+            }
+            doc.save(`radar-tendencias-sp-${new Date().getTime()}.pdf`);
+        }
+
+        function exportTrendsToExcel() {
+            if (!window.lastTrendsData) return;
+            const ws = XLSX.utils.json_to_sheet(window.lastTrendsData.hot_products.map(p => ({
+                Produto: p.name,
+                Categoria: p.category,
+                'Crescimento (%)': p.growth,
+                URL: p.url
+            })));
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "Tendências");
+            XLSX.writeFile(wb, `radar-tendencias-sp-${new Date().getTime()}.xlsx`);
+        }
+
+        async function exportNichoToPDF() {
+            const { jsPDF } = window.jspdf;
+            const doc = jsPDF('p', 'mm', 'a4');
+            const pageWidth = doc.internal.pageSize.getWidth();
+            doc.setFillColor(2, 6, 23);
+            doc.rect(0, 0, pageWidth, 50, 'F');
+            doc.setTextColor(255, 255, 255);
+            doc.setFont("helvetica", "bold");
+            doc.setFontSize(26);
+            doc.text("RADAR POR NICHO SP", 20, 25);
+            doc.setFont("helvetica", "normal");
+            doc.setFontSize(10);
+            doc.setTextColor(148, 163, 184);
+            doc.text("Inteligência de Mercado em Tempo Real", 20, 32);
+            doc.text(`Relatório Gerado em: ${new Date().toLocaleString('pt-BR')}`, 20, 38);
+            
+            let y = 65;
+            doc.setTextColor(15, 23, 42);
+            doc.setFontSize(16);
+            doc.setFont("helvetica", "bold");
+            doc.text("Análise de Mercado", 20, y);
+            y += 10;
+            
+            if (window.lastNichoData) {
+                doc.setFontSize(12);
+                doc.text("Oportunidades:", 20, y);
+                y += 7;
+                window.lastNichoData.oportunidades.forEach(o => {
+                    doc.setFontSize(10);
+                    doc.setFont("helvetica", "bold");
+                    doc.text(`- ${o.titulo}`, 25, y);
+                    doc.setFont("helvetica", "normal");
+                    y += 5;
+                    const splitText = doc.splitTextToSize(o.descricao, 160);
+                    doc.text(splitText, 25, y);
+                    y += (splitText.length * 5) + 2;
+                });
+            }
+            doc.save(`radar-nicho-sp-${new Date().getTime()}.pdf`);
+        }
+
+        function exportNichoToExcel() {
+            if (!window.lastNichoData) return;
+            const wsData = [
+                ["Seção", "Título/Nome", "Descrição/Crescimento"],
+                ...window.lastNichoData.oportunidades.map(o => ["Oportunidade", o.titulo, o.descricao]),
+                ...window.lastNichoData.tendencias.map(t => ["Tendência", t.nome, t.crescimento + "%"]),
+                ...window.lastNichoData.produtos.map(p => ["Produto", p.name, p.demanda + "%"])
+            ];
+            const ws = XLSX.utils.aoa_to_sheet(wsData);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "Nicho");
+            XLSX.writeFile(wb, `radar-nicho-sp-${new Date().getTime()}.xlsx`);
+        }
         {% elif active_page == 'tendencias' %}
         let regionChart = null;
         
