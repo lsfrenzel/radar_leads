@@ -15,6 +15,8 @@ HTML_TEMPLATE = """
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
         :root {
             --bg-dark: #020617;
@@ -143,6 +145,17 @@ HTML_TEMPLATE = """
             </div>
         </div>
 
+        <div class="glass-card p-4 mt-4" id="exportControls" style="display: none;">
+            <div class="d-flex justify-content-center gap-3">
+                <button class="btn btn-outline-light" onclick="exportToExcel()">
+                    <i class="bi bi-file-earmark-excel me-2"></i>Exportar Excel (.xlsx)
+                </button>
+                <button class="btn btn-outline-light" onclick="exportToPDF()">
+                    <i class="bi bi-file-earmark-pdf me-2"></i>Exportar PDF (.pdf)
+                </button>
+            </div>
+        </div>
+
         <div id="dashboard" class="row mt-4" style="display: none;">
                 <div class="col-12 mb-4">
                     <div class="glass-card p-4">
@@ -183,6 +196,8 @@ HTML_TEMPLATE = """
     <script>
         let trendChart = null;
 
+        let lastResults = [];
+
         function showDetails(city, neighborhood, details) {
             document.getElementById('modalTitle').innerText = `Fontes: ${city} - ${neighborhood}`;
             document.getElementById('modalBody').innerText = details;
@@ -191,11 +206,55 @@ HTML_TEMPLATE = """
             myModal.show();
         }
 
+        async function exportToPDF() {
+            const { jsPDF } = window.jspdf;
+            const doc = jsPDF();
+            
+            doc.setFontSize(18);
+            doc.text("Relatório Radar de Leads SP", 20, 20);
+            doc.setFontSize(12);
+            doc.text(`Data: ${new Date().toLocaleDateString()}`, 20, 30);
+            
+            let y = 45;
+            doc.setFontSize(14);
+            doc.text("Intelligence Feed:", 20, y);
+            y += 10;
+            
+            doc.setFontSize(10);
+            lastResults.forEach((item, i) => {
+                if (y > 270) { doc.addPage(); y = 20; }
+                const line = `${item.city} (${item.neighborhood}) - Demanda: ${item.demand_percentage}% - Intensidade: ${item.intensity}`;
+                doc.text(line, 20, y);
+                y += 7;
+            });
+
+            doc.save("radar-de-leads-sp.pdf");
+        }
+
+        function exportToExcel() {
+            const ws = XLSX.utils.json_to_sheet(lastResults.map(r => ({
+                Cidade: r.city,
+                Bairro: r.neighborhood,
+                Região: r.region,
+                'Demanda (%)': r.demand_percentage,
+                Tendência: r.trend,
+                Intensidade: r.intensity,
+                Fontes: r.sources
+            })));
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "Leads SP");
+            XLSX.writeFile(wb, "radar-de-leads-sp.xlsx");
+        }
+
         function updateDashboard(results) {
+            lastResults = results;
             const dashboard = document.getElementById('dashboard');
             const legend = document.getElementById('legend');
+            const exportControls = document.getElementById('exportControls');
+            
             dashboard.style.display = 'flex';
             legend.style.display = 'block';
+            exportControls.style.display = 'block';
 
             // Curva de Tendência (Simulando variação nos últimos 7 dias baseada na demanda atual)
             const labels = results.map(r => `${r.city} (${r.neighborhood})`);
@@ -259,6 +318,7 @@ HTML_TEMPLATE = """
             const resultsDiv = document.getElementById('results');
             document.getElementById('dashboard').style.display = 'none';
             document.getElementById('legend').style.display = 'none';
+            document.getElementById('exportControls').style.display = 'none';
             
             resultsDiv.innerHTML = `
                 <div class="loader-container">
