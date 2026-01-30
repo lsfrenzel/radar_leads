@@ -506,7 +506,14 @@ HTML_TEMPLATE = """
                 resultsDiv.innerHTML = '';
                 dashboard.style.display = 'flex';
                 const hotDiv = document.getElementById('hotProducts');
-                hotDiv.innerHTML = data.hot_products.map(p => `<div class="list-group-item bg-transparent border-0 d-flex justify-content-between align-items-center"><div><h6 class="mb-0 text-white">${p.name}</h6><small class="text-muted">${p.category}</small></div><span class="badge bg-primary rounded-pill">+${p.growth}%</span></div>`).join('');
+                hotDiv.innerHTML = data.hot_products.map(p => `
+                    <a href="${p.url}" target="_blank" class="list-group-item list-group-item-action bg-transparent border-0 d-flex justify-content-between align-items-center text-decoration-none">
+                        <div>
+                            <h6 class="mb-0 text-white">${p.name} <i class="bi bi-box-arrow-up-right small text-muted ms-1"></i></h6>
+                            <small class="text-muted">${p.category}</small>
+                        </div>
+                        <span class="badge bg-primary rounded-pill">+${p.growth}%</span>
+                    </a>`).join('');
                 if (regionChart) regionChart.destroy();
                 const ctx = document.getElementById('regionChart').getContext('2d');
                 regionChart = new Chart(ctx, {
@@ -563,9 +570,9 @@ def get_trends():
 
     prompt = f"Gere uma análise de tendências de consumo EM TEMPO REAL para a {contexto} em São Paulo (Jan 2026). " \
              f"Seja extremamente específico sobre o que as pessoas estão buscando agora nessa localidade. " \
-             f"Retorne 4 produtos/serviços 'hot' com categoria e porcentagem de crescimento, " \
+             f"Retorne 4 produtos/serviços 'hot' com categoria, porcentagem de crescimento e um link de referência (ex: busca no Google Shopping ou site de notícias relevante). " \
              f"e a distribuição de interesse por sub-áreas/bairros da localidade em 5 pontos." \
-             f"Formato JSON: {{\"hot_products\": [{{ \"name\": \"\", \"category\": \"\", \"growth\": 0 }}], \"regions\": [{{ \"name\": \"\", \"value\": 0 }}]}}"
+             f"Formato JSON: {{\"hot_products\": [{{ \"name\": \"\", \"category\": \"\", \"growth\": 0, \"url\": \"\" }}], \"regions\": [{{ \"name\": \"\", \"value\": 0 }}]}}"
     
     try:
         from engine import client, MODEL
@@ -585,10 +592,10 @@ def get_trends():
         if region and region.startswith("bairro:"):
             return jsonify({
                 "hot_products": [
-                    {"name": f"Delivery Premium em {loc_nome}", "category": "Gastronomia", "growth": 45},
-                    {"name": "Serviços Home Office", "category": "Tecnologia", "growth": 32},
-                    {"name": "Saúde Preventiva", "category": "Bem-estar", "growth": 28},
-                    {"name": "Mobilidade Elétrica", "category": "Transporte", "growth": 15}
+                    {"name": f"Delivery Premium em {loc_nome}", "category": "Gastronomia", "growth": 45, "url": "https://www.ifood.com.br"},
+                    {"name": "Serviços Home Office", "category": "Tecnologia", "growth": 32, "url": "https://www.mercadolivre.com.br"},
+                    {"name": "Saúde Preventiva", "category": "Bem-estar", "growth": 28, "url": "https://www.drogaraia.com.br"},
+                    {"name": "Mobilidade Elétrica", "category": "Transporte", "growth": 15, "url": "https://www.movida.com.br"}
                 ],
                 "regions": [
                     {"name": "Setor Norte", "value": 30},
@@ -601,10 +608,10 @@ def get_trends():
         
         return jsonify({
             "hot_products": [
-                {"name": "Ar Condicionado Inverter", "category": "Eletro", "growth": 45},
-                {"name": "Protetor Solar FPS 60+", "category": "Saúde", "growth": 38},
-                {"name": "Cerveja Artesanal IPA", "category": "Bebidas", "growth": 22},
-                {"name": "Bicicleta Elétrica", "category": "Mobilidade", "growth": 15}
+                {"name": "Ar Condicionado Inverter", "category": "Eletro", "growth": 45, "url": "https://www.magazineluiza.com.br"},
+                {"name": "Protetor Solar FPS 60+", "category": "Saúde", "growth": 38, "url": "https://www.belezanaweb.com.br"},
+                {"name": "Cerveja Artesanal IPA", "category": "Bebidas", "growth": 22, "url": "https://www.empiriodacerveja.com.br"},
+                {"name": "Bicicleta Elétrica", "category": "Mobilidade", "growth": 15, "url": "https://www.decathlon.com.br"}
             ],
             "regions": [
                 {"name": "Centro", "value": 30},
