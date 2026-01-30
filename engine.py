@@ -114,8 +114,8 @@ class MarketIntelligenceEngine:
             ],
             "reference_links": [
                 {"title": "Google Trends", "url": f"https://trends.google.com.br/trends/explore?q={product}&geo=BR-SP", "description": "Volume de buscas regionais."},
-                {"title": "Mercado Livre", "url": f"https://lista.mercadolivre.com.br/{product}", "description": "Preços e disponibilidade real."},
-                {"title": "Reclame Aqui", "url": f"https://www.reclameaqui.com.br/busca/?q={product}", "description": "Principais dores dos usuários."}
+                {"title": "TechRadar Brazil", "url": "https://www.techradar.com/br", "description": "Análises e tendências de tecnologia."},
+                {"title": "Exame Negócios", "url": "https://exame.com/noticias-sobre/mercado-consumidor/", "description": "Insights de mercado e consumo."}
             ],
             "consumer_behavior": {
                 "preferred_channels": ["Marketplaces (ML/Amazon)", "Instagram Shopping", "Busca Orgânica Google"],

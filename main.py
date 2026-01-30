@@ -186,6 +186,17 @@ HTML_TEMPLATE = """
                     </div>
                 </div>
 
+                <div class="col-12 mb-4">
+                    <div class="glass-card p-4">
+                        <h4 class="mb-3 text-primary"><i class="bi bi-cpu me-2"></i>Modelos Mais Pesquisados & Referências</h4>
+                        <div id="popularModelsContent" class="row g-3">
+                            <div class="col-12 text-center py-3">
+                                <span class="text-muted small">Aguardando análise...</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
     </div>
 
     <!-- Modal de Detalhes Estático -->
@@ -416,6 +427,43 @@ HTML_TEMPLATE = """
             `;
             
             lastResults = results;
+            
+            // Atualizar Modelos Populares
+            const popularModelsContent = document.getElementById('popularModelsContent');
+            if (resultsData.popular_models && resultsData.popular_models.length > 0) {
+                let modelsHtml = '';
+                resultsData.popular_models.forEach(model => {
+                    modelsHtml += `
+                        <div class="col-md-4">
+                            <div class="glass-card p-3 h-100 border-info">
+                                <h6 class="text-info mb-2">${model.name}</h6>
+                                <p class="small text-muted mb-0">${model.reason}</p>
+                            </div>
+                        </div>
+                    `;
+                });
+                
+                if (resultsData.reference_links && resultsData.reference_links.length > 0) {
+                    modelsHtml += `<div class="col-12 mt-3"><h6 class="text-muted small text-uppercase">Links de Referência</h6></div>`;
+                    resultsData.reference_links.forEach(link => {
+                        // Filtrar links indesejados no frontend também por segurança
+                        if (!link.url.includes('mercadolivre') && !link.url.includes('reclameaqui')) {
+                            modelsHtml += `
+                                <div class="col-md-6">
+                                    <div class="glass-card p-2 d-flex align-items-center">
+                                        <i class="bi bi-link-45deg me-2 text-primary"></i>
+                                        <a href="${link.url}" target="_blank" class="text-decoration-none text-main small text-truncate">${link.title}</a>
+                                    </div>
+                                </div>
+                            `;
+                        }
+                    });
+                }
+                popularModelsContent.innerHTML = modelsHtml;
+            } else {
+                popularModelsContent.innerHTML = '<div class="col-12 text-center py-3 text-muted small">Nenhum modelo específico detectado.</div>';
+            }
+
             document.getElementById('dashboard').style.display = 'block';
             document.getElementById('legend').style.display = 'block';
             document.getElementById('exportControls').style.display = 'block';
