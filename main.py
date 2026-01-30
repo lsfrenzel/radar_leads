@@ -11,45 +11,71 @@ HTML_TEMPLATE = """
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Radar de Leads - Inteligência de Mercado</title>
+    <title>Radar de Leads SP - Inteligência de Mercado</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        body { background-color: #0f172a; color: #e2e8f0; font-family: 'Inter', sans-serif; }
-        .card { background-color: #1e293b; border: 1px solid #334155; border-radius: 12px; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); margin-bottom: 24px; }
-        .table { color: #e2e8f0; }
-        .table-light { background-color: #334155; color: #f8fafc; border-color: #475569; }
-        .table-hover tbody tr:hover { background-color: #334155; color: #fff; }
-        .btn-primary { background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); border: none; }
-        .spinner-border { color: #3b82f6; }
-        .chart-container { position: relative; height: 400px; width: 100%; }
-        h1, h3 { font-weight: 700; letter-spacing: -0.025em; color: #f8fafc; }
-        .heatmap-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 10px; margin-top: 20px; }
-        .heatmap-cell { padding: 15px; border-radius: 8px; text-align: center; color: #fff; font-weight: bold; transition: transform 0.2s; }
-        .heatmap-cell:hover { transform: scale(1.05); }
-        .heat-high { background: linear-gradient(135deg, #ef4444 0%, #991b1b 100%); box-shadow: 0 0 15px rgba(239, 68, 68, 0.4); }
-        .heat-medium { background: linear-gradient(135deg, #f59e0b 0%, #b45309 100%); box-shadow: 0 0 15px rgba(245, 158, 11, 0.4); }
-        .heat-low { background: linear-gradient(135deg, #10b981 0%, #065f46 100%); box-shadow: 0 0 15px rgba(16, 185, 129, 0.4); }
+        :root {
+            --bg-dark: #020617;
+            --card-bg: #0f172a;
+            --accent: #3b82f6;
+            --accent-glow: rgba(59, 130, 246, 0.5);
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+        }
+        body { background-color: var(--bg-dark); color: var(--text-main); font-family: 'Inter', system-ui, sans-serif; overflow-x: hidden; }
+        .glass-card { background: var(--card-bg); border: 1px solid rgba(255,255,255,0.05); border-radius: 16px; box-shadow: 0 4px 30px rgba(0, 0, 0, 0.5); backdrop-filter: blur(10px); transition: all 0.3s ease; }
+        .glass-card:hover { border-color: var(--accent); }
+        .hero-title { background: linear-gradient(135deg, #fff 0%, #3b82f6 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-weight: 800; font-size: 2.5rem; }
+        .btn-primary { background: var(--accent); border: none; padding: 12px 24px; border-radius: 12px; font-weight: 600; box-shadow: 0 0 20px var(--accent-glow); transition: all 0.3s; }
+        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 0 30px var(--accent-glow); background: #2563eb; }
+        .form-control, .form-select { background: #1e293b; border: 1px solid #334155; color: #fff; border-radius: 10px; padding: 12px; }
+        .form-control:focus, .form-select:focus { background: #1e293b; color: #fff; border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-glow); }
+        
+        /* Processamento Incrível */
+        .loader-container { padding: 60px 0; text-align: center; }
+        .cyber-loader { position: relative; width: 100px; height: 100px; margin: 0 auto 30px; }
+        .cyber-loader div { position: absolute; width: 100%; height: 100%; border: 4px solid transparent; border-top-color: var(--accent); border-radius: 50%; animation: spin 1.5s linear infinite; }
+        .cyber-loader div:nth-child(2) { border-top-color: #10b981; animation-duration: 2s; width: 80%; height: 80%; top: 10%; left: 10%; }
+        .cyber-loader div:nth-child(3) { border-top-color: #f59e0b; animation-duration: 1s; width: 60%; height: 60%; top: 20%; left: 20%; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .loading-text { font-family: 'Courier New', monospace; letter-spacing: 2px; color: var(--accent); text-transform: uppercase; animation: pulse 2s infinite; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+
+        .table { color: var(--text-main); }
+        .table thead th { background: rgba(255,255,255,0.03); color: var(--text-muted); text-transform: uppercase; font-size: 0.75rem; border: none; }
+        .table td { border-color: rgba(255,255,255,0.05); vertical-align: middle; }
+        .heatmap-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 15px; }
+        .heatmap-cell { border: 1px solid rgba(255,255,255,0.05); cursor: pointer; }
     </style>
 </head>
 <body>
     <div class="container py-5">
-        <h1 class="text-center mb-4">Radar de Leads Brasil</h1>
-        <div class="card p-4">
+        <div class="text-center mb-5">
+            <h1 class="hero-title">Radar de Leads SP</h1>
+            <p class="text-muted">Inteligência de Mercado em Tempo Real para o Estado de São Paulo</p>
+        </div>
+        
+        <div class="glass-card p-4">
             <form id="searchForm">
                 <div class="row g-3">
                     <div class="col-md-6">
-                        <input type="text" class="form-control" id="product" placeholder="Produto ou Serviço (ex: Solar Energy)" required>
+                        <label class="small text-muted mb-2">O QUE VOCÊ BUSCA?</label>
+                        <input type="text" class="form-control" id="product" placeholder="Ex: Energia Solar, Imóveis, IA..." required>
                     </div>
                     <div class="col-md-3">
+                        <label class="small text-muted mb-2">PERÍODO</label>
                         <select class="form-select" id="days">
-                            <option value="7">Últimos 7 dias</option>
-                            <option value="30" selected>Últimos 30 dias</option>
-                            <option value="90">Últimos 90 dias</option>
+                            <option value="7">7 Dias</option>
+                            <option value="30" selected>30 Dias</option>
+                            <option value="90">90 Dias</option>
                         </select>
                     </div>
-                    <div class="col-md-3">
-                        <button type="submit" class="btn btn-primary w-100">Analisar Mercado</button>
+                    <div class="col-md-3 d-flex align-items-end">
+                        <button type="submit" class="btn btn-primary w-100">
+                            <i class="bi bi-search me-2"></i>ANALISAR
+                        </button>
                     </div>
                 </div>
             </form>
@@ -58,7 +84,7 @@ HTML_TEMPLATE = """
         <div id="results" class="mt-4"></div>
         
         <!-- Legenda do Sistema -->
-        <div id="legend" class="card p-4 mt-4" style="display: none;">
+        <div id="legend" class="glass-card p-4 mt-4" style="display: none;">
             <h5 class="mb-3"><i class="bi bi-info-circle"></i> Guia de Indicadores</h5>
             <div class="row g-4">
                 <div class="col-md-4">
@@ -93,20 +119,20 @@ HTML_TEMPLATE = """
         </div>
 
         <div id="dashboard" class="row mt-4" style="display: none;">
-            <div class="col-12 mb-4">
-                <div class="card p-4">
-                    <h4 class="mb-4 text-center"><i class="bi bi-graph-up"></i> Curva de Tendência de Mercado (SP)</h4>
-                    <div class="chart-container">
-                        <canvas id="trendChart"></canvas>
+                <div class="col-12 mb-4">
+                    <div class="glass-card p-4">
+                        <h4 class="mb-4 text-center"><i class="bi bi-graph-up text-primary me-2"></i>Curva de Tendência de Mercado (SP)</h4>
+                        <div class="chart-container">
+                            <canvas id="trendChart"></canvas>
+                        </div>
                     </div>
                 </div>
-            </div>
-            <div class="col-12 mb-4">
-                <div class="card p-4">
-                    <h4 class="mb-3 text-center"><i class="bi bi-geo-alt"></i> Mapa de Calor de Demanda Estratificada</h4>
-                    <div id="heatmapContainer" class="heatmap-grid"></div>
+                <div class="col-12 mb-4">
+                    <div class="glass-card p-4">
+                        <h4 class="mb-3 text-center"><i class="bi bi-geo-alt text-primary me-2"></i>Mapa de Calor de Demanda Estratificada</h4>
+                        <div id="heatmapContainer" class="heatmap-grid"></div>
+                    </div>
                 </div>
-            </div>
         </div>
     </div>
 
@@ -208,7 +234,16 @@ HTML_TEMPLATE = """
             const resultsDiv = document.getElementById('results');
             document.getElementById('dashboard').style.display = 'none';
             document.getElementById('legend').style.display = 'none';
-            resultsDiv.innerHTML = '<div class="text-center"><div class="spinner-border" role="status"></div><p class="mt-2">Escaneando a web e processando inteligência estratificada...</p></div>';
+            
+            resultsDiv.innerHTML = `
+                <div class="loader-container">
+                    <div class="cyber-loader">
+                        <div></div><div></div><div></div>
+                    </div>
+                    <p class="loading-text">Iniciando Varredura SP...</p>
+                    <p class="small text-muted">Processando inteligência estratificada da web</p>
+                </div>
+            `;
             
             const product = document.getElementById('product').value;
             const days = document.getElementById('days').value;
@@ -224,19 +259,19 @@ HTML_TEMPLATE = """
                 if (data.results && data.results.length > 0) {
                     updateDashboard(data.results);
                     let html = `
-                        <div class="card p-4">
-                            <h3 class="mb-4">Inteligência de Mercado: São Paulo</h3>
+                        <div class="glass-card p-4 mt-4">
+                            <h3 class="mb-4 text-primary">Intelligence Feed: São Paulo</h3>
                             <div class="table-responsive">
                                 <table class="table table-hover">
                                     <thead>
-                                        <tr class="table-light">
+                                        <tr>
                                             <th>Cidade</th>
-                                            <th>Bairro/Distrito</th>
+                                            <th>Bairro</th>
                                             <th>Região</th>
-                                            <th>Demanda (%)</th>
+                                            <th>Demanda</th>
                                             <th>Tendência</th>
                                             <th>Intensidade</th>
-                                            <th>Ações</th>
+                                            <th>Ação</th>
                                         </tr>
                                     </thead>
                                     <tbody>
