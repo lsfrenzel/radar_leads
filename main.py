@@ -347,7 +347,8 @@ HTML_TEMPLATE = """
             XLSX.writeFile(wb, `radar-leads-sp-${new Date().getTime()}.xlsx`);
         }
 
-
+        function updateDashboard(resultsData) {
+            const results = resultsData.stratified_data;
             // Curva de Tendência (Simulando variação nos últimos 7 dias baseada na demanda atual)
             const labels = results.map(r => `${r.city} (${r.neighborhood})`);
             
@@ -405,6 +406,19 @@ HTML_TEMPLATE = """
                 cell.onclick = () => showDetails(r.city, r.neighborhood, r.sources);
                 heatmapContainer.appendChild(cell);
             });
+
+            // Gerar análise de IA simples baseada nos dados
+            const aiAnalysisContent = document.getElementById('aiAnalysisContent');
+            const topCity = results[0];
+            aiAnalysisContent.innerHTML = `
+                <p><strong>Destaque Geográfico:</strong> A maior demanda foi detectada em <strong>${topCity.city} (${topCity.neighborhood})</strong> com ${topCity.demand_percentage}% de interesse.</p>
+                <p><strong>Recomendação:</strong> Focar esforços de marketing digital e força de vendas nas regiões de intensidade 'high' para maximizar a conversão imediata.</p>
+            `;
+            
+            lastResults = results;
+            document.getElementById('dashboard').style.display = 'block';
+            document.getElementById('legend').style.display = 'block';
+            document.getElementById('exportControls').style.display = 'block';
         }
 
         document.getElementById('searchForm').onsubmit = async (e) => {
