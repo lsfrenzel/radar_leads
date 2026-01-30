@@ -360,7 +360,11 @@ HTML_TEMPLATE = """
             XLSX.writeFile(wb, `radar-leads-sp-${new Date().getTime()}.xlsx`);
         }
 
-        function updateDashboard(results) {
+        function updateDashboard(data) {
+            const results = data.stratified_data || [];
+            const popularModels = data.popular_models || [];
+            const referenceLinks = data.reference_links || [];
+            
             lastResults = results;
             const dashboard = document.getElementById('dashboard');
             const legend = document.getElementById('legend');
@@ -373,63 +377,50 @@ HTML_TEMPLATE = """
             exportControls.style.display = 'block';
 
             // Gerar análise estratégica baseada nos dados
-            const topLocation = results[0];
-            const highIntensityCount = results.filter(r => r.intensity === 'high').length;
-            const totalDemand = results.reduce((acc, r) => acc + r.demand_percentage, 0).toFixed(1);
-
-            aiAnalysisContent.innerHTML = `
-                <div class="mb-3">
-                    <p>Com base na varredura realizada, detectamos um volume crítico de interesse em <strong>${topLocation.city} (${topLocation.neighborhood})</strong>, que lidera com <strong>${topLocation.demand_percentage}%</strong> da demanda estadual. Identificamos <strong>${highIntensityCount} áreas de alta intensidade</strong> onde o ciclo de decisão de compra está em estágio avançado.</p>
-                </div>
-                <div class="row g-3">
-                    <div class="col-md-6">
-                        <div class="p-3 rounded bg-primary bg-opacity-10 border border-primary border-opacity-20 h-100">
-                            <h6 class="text-primary"><i class="bi bi-rocket-takeoff me-2"></i>Oportunidade de Ouro</h6>
-                            <p class="small mb-0">Focar campanhas geolocalizadas em <strong>${topLocation.city}</strong>. A tendência é de <strong>${topLocation.trend === 'up' ? 'alta aceleração' : 'estabilidade sólida'}</strong>, sugerindo que o custo de aquisição (CAC) tende a ser menor nessas regiões agora.</p>
+            if (results.length > 0) {
+                const topLocation = results[0];
+                const highIntensityCount = results.filter(r => r.intensity === 'high').length;
+                
+                aiAnalysisContent.innerHTML = `
+                    <div class="mb-3">
+                        <p>Com base na varredura realizada, detectamos um volume crítico de interesse em <strong>${topLocation.city} (${topLocation.neighborhood})</strong>, que lidera com <strong>${topLocation.demand_percentage}%</strong> da demanda estadual. Identificamos <strong>${highIntensityCount} áreas de alta intensidade</strong> onde o ciclo de decisão de compra está em estágio avançado.</p>
+                    </div>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <div class="p-3 rounded bg-primary bg-opacity-10 border border-primary border-opacity-20 h-100">
+                                <h6 class="text-primary"><i class="bi bi-rocket-takeoff me-2"></i>Oportunidade de Ouro</h6>
+                                <p class="small mb-0">Focar campanhas geolocalizadas em <strong>${topLocation.city}</strong>. A tendência é de <strong>${topLocation.trend === 'up' ? 'alta aceleração' : 'estabilidade sólida'}</strong>, sugerindo que o custo de aquisição (CAC) tende a ser menor nessas regiões agora.</p>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="p-3 rounded bg-success bg-opacity-10 border border-success border-opacity-20 h-100">
+                                <h6 class="text-success"><i class="bi bi-graph-up-arrow me-2"></i>Estratégia de Vendas</h6>
+                                <p class="small mb-0">Para as áreas com intensidade "HIGH", recomendamos abordagens diretas e ofertas de escassez. Para as áreas de intensidade "MEDIUM", invista em conteúdo educativo para nutrir os leads que ainda estão em fase de pesquisa.</p>
+                            </div>
                         </div>
                     </div>
-                    <div class="col-md-6">
-                        <div class="p-3 rounded bg-success bg-opacity-10 border border-success border-opacity-20 h-100">
-                            <h6 class="text-success"><i class="bi bi-graph-up-arrow me-2"></i>Estratégia de Vendas</h6>
-                            <p class="small mb-0">Para as áreas com intensidade "HIGH", recomendamos abordagens diretas e ofertas de escassez. Para as áreas de intensidade "MEDIUM", invista em conteúdo educativo para nutrir os leads que ainda estão em fase de pesquisa.</p>
-                        </div>
-                    </div>
-                </div>
-            `;
+                `;
+            }
 
-            // Gerar Seção de Modelos e Links Populares
-            const product = document.getElementById('product').value;
-            const encodedProduct = encodeURIComponent(product);
+            // Gerar Seção de Modelos e Links Dinâmicos
+            let modelsHtml = '<div class="col-md-6"><div class="p-3 rounded border border-secondary border-opacity-20"><h6 class="text-muted small text-uppercase mb-3">Modelos Mais Pesquisados</h6><ul class="list-unstyled mb-0">';
+            popularModels.forEach(m => {
+                modelsHtml += `<li class="mb-2"><i class="bi bi-check2-circle text-primary me-2"></i> <strong>${m.name}</strong>: <span class="small text-muted">${m.reason}</span></li>`;
+            });
+            modelsHtml += '</ul></div></div>';
+
+            let linksHtml = '<div class="col-md-6"><div class="p-3 rounded border border-secondary border-opacity-20"><h6 class="text-muted small text-uppercase mb-3">Referências & Sites de Referência</h6><div class="d-grid gap-2">';
+            referenceLinks.forEach(l => {
+                linksHtml += `
+                    <a href="${l.url}" target="_blank" class="btn btn-sm btn-outline-primary text-start">
+                        <i class="bi bi-link-45deg me-2"></i>${l.title}
+                        <div class="x-small text-muted mt-1" style="font-size: 0.65rem;">${l.description}</div>
+                    </a>
+                `;
+            });
+            linksHtml += '</div></div></div>';
             
-            popularModelsContent.innerHTML = `
-                <div class="col-md-6">
-                    <div class="p-3 rounded border border-secondary border-opacity-20">
-                        <h6 class="text-muted small text-uppercase mb-3">Modelos Mais Pesquisados</h6>
-                        <ul class="list-unstyled mb-0">
-                            <li class="mb-2"><i class="bi bi-check2-circle text-primary me-2"></i> ${product} Premium Plus</li>
-                            <li class="mb-2"><i class="bi bi-check2-circle text-primary me-2"></i> ${product} Pro Edition</li>
-                            <li class="mb-2"><i class="bi bi-check2-circle text-primary me-2"></i> ${product} Eco-Smart</li>
-                            <li><i class="bi bi-check2-circle text-primary me-2"></i> ${product} Flex Modular</li>
-                        </ul>
-                    </div>
-                </div>
-                <div class="col-md-6">
-                    <div class="p-3 rounded border border-secondary border-opacity-20">
-                        <h6 class="text-muted small text-uppercase mb-3">Referências & Sites de Referência</h6>
-                        <div class="d-grid gap-2">
-                            <a href="https://trends.google.com.br/trends/explore?q=${encodedProduct}&geo=BR-SP" target="_blank" class="btn btn-sm btn-outline-primary text-start">
-                                <i class="bi bi-google me-2"></i>Google Trends: ${product} SP
-                            </a>
-                            <a href="https://www.reclameaqui.com.br/busca/?q=${encodedProduct}" target="_blank" class="btn btn-sm btn-outline-primary text-start">
-                                <i class="bi bi-shield-check me-2"></i>Reclame Aqui: Reputação ${product}
-                            </a>
-                            <a href="https://www.mercadolivre.com.br/gz/home/navigation?q=${encodedProduct}" target="_blank" class="btn btn-sm btn-outline-primary text-start">
-                                <i class="bi bi-cart3 me-2"></i>Tendências no Mercado Livre
-                            </a>
-                        </div>
-                    </div>
-                </div>
-            `;
+            popularModelsContent.innerHTML = modelsHtml + linksHtml;
 
             // Curva de Tendência (Simulando variação nos últimos 7 dias baseada na demanda atual)
             const labels = results.map(r => `${r.city} (${r.neighborhood})`);
@@ -518,8 +509,9 @@ HTML_TEMPLATE = """
                 });
                 const data = await response.json();
                 
-                if (data.results && data.results.length > 0) {
-                    updateDashboard(data.results);
+                if (data.results && (data.results.stratified_data || data.results.length > 0)) {
+                    const finalData = data.results.stratified_data ? data.results : { stratified_data: data.results, popular_models: [], reference_links: [] };
+                    updateDashboard(finalData);
                     let html = `
                         <div class="glass-card p-4 mt-4">
                             <h3 class="mb-4 text-primary">Intelligence Feed: São Paulo</h3>
@@ -539,7 +531,7 @@ HTML_TEMPLATE = """
                                     <tbody>
                     `;
                     
-                    data.results.forEach((item, index) => {
+                    finalData.stratified_data.forEach((item, index) => {
                         const trendIcon = item.trend === 'up' ? '↗️' : (item.trend === 'down' ? '↘️' : '➡️');
                         const trendClass = item.trend === 'up' ? 'trend-up' : (item.trend === 'down' ? 'trend-down' : 'trend-stable');
                         const intensityClass = item.intensity === 'high' ? 'intensity-high' : (item.intensity === 'medium' ? 'intensity-medium' : 'intensity-low');

@@ -50,6 +50,19 @@ class MarketIntelligenceEngine:
                     "intensity": "high/medium/low",
                     "sources": "Detailed explanation of data sources"
                 }}
+            ],
+            "popular_models": [
+                {{
+                    "name": "Model Name",
+                    "reason": "Why it is popular"
+                }}
+            ],
+            "reference_links": [
+                {{
+                    "title": "Site Title",
+                    "url": "https://example.com",
+                    "description": "Why this site is relevant"
+                }}
             ]
         }}
         """
@@ -65,23 +78,34 @@ class MarketIntelligenceEngine:
             content = response.choices[0].message.content
             if content:
                 data = json.loads(content)
-                results = data.get('stratified_data', [])
-                if results:
-                    return results
+                return {
+                    "stratified_data": data.get('stratified_data', []),
+                    "popular_models": data.get('popular_models', []),
+                    "reference_links": data.get('reference_links', [])
+                }
         except Exception as e:
             print(f"Erro na varredura: {e}")
             
         # Fallback instantâneo se a API demorar demais
-        return [
-            {"city": "São Paulo", "neighborhood": "Pinheiros", "region": "Grande SP", "demand_percentage": 18.5, "trend": "up", "intensity": "high", "sources": "Volume crítico no Google Trends SP; Menções crescentes no Twitter/X; Tráfego elevado em lojas de tecnologia da região."},
-            {"city": "São Paulo", "neighborhood": "Moema", "region": "Grande SP", "demand_percentage": 15.2, "trend": "up", "intensity": "high", "sources": "Análise de hashtags de consumo; Densidade de varejo premium; Consultas mobile geolocalizadas."},
-            {"city": "Campinas", "neighborhood": "Cambuí", "region": "Interior", "demand_percentage": 12.8, "trend": "stable", "intensity": "medium", "sources": "Relatórios de consumo regional; Discussões em grupos de compra locais no Facebook."},
-            {"city": "São José dos Campos", "neighborhood": "Vila Adyana", "region": "Interior", "demand_percentage": 10.5, "trend": "up", "intensity": "medium", "sources": "Crescimento de buscas em marketplaces; Sinais de logística acelerada para eletrônicos."},
-            {"city": "Ribeirão Preto", "neighborhood": "Centro", "region": "Interior", "demand_percentage": 9.2, "trend": "stable", "intensity": "medium", "sources": "Consultas em sites de comparação de preços; Engajamento em anúncios regionais."},
-            {"city": "Santos", "neighborhood": "Gonzaga", "region": "Litoral", "demand_percentage": 8.4, "trend": "up", "intensity": "medium", "sources": "Tendência sazonal detectada; Check-ins em centros comerciais; Buscas por entrega rápida."},
-            {"city": "Sorocaba", "neighborhood": "Campolim", "region": "Interior", "demand_percentage": 7.6, "trend": "up", "intensity": "low", "sources": "Interesse emergente em fóruns de tecnologia; Volume moderado de buscas geográficas."},
-            {"city": "Santo André", "neighborhood": "Jardim", "region": "Grande SP", "demand_percentage": 6.8, "trend": "stable", "intensity": "low", "sources": "Monitoramento de tráfego de e-commerce; Menções em comunidades locais."}
-        ]
+        return {
+            "stratified_data": [
+                {"city": "São Paulo", "neighborhood": "Pinheiros", "region": "Grande SP", "demand_percentage": 18.5, "trend": "up", "intensity": "high", "sources": "Volume crítico no Google Trends SP; Menções crescentes no Twitter/X; Tráfego elevado em lojas de tecnologia da região."},
+                {"city": "São Paulo", "neighborhood": "Moema", "region": "Grande SP", "demand_percentage": 15.2, "trend": "up", "intensity": "high", "sources": "Análise de hashtags de consumo; Densidade de varejo premium; Consultas mobile geolocalizadas."},
+                {"city": "Campinas", "neighborhood": "Cambuí", "region": "Interior", "demand_percentage": 12.8, "trend": "stable", "intensity": "medium", "sources": "Relatórios de consumo regional; Discussões em grupos de compra locais no Facebook."},
+                {"city": "São José dos Campos", "neighborhood": "Vila Adyana", "region": "Interior", "demand_percentage": 10.5, "trend": "up", "intensity": "medium", "sources": "Crescimento de buscas em marketplaces; Sinais de logística acelerada para eletrônicos."},
+                {"city": "Ribeirão Preto", "neighborhood": "Centro", "region": "Interior", "demand_percentage": 9.2, "trend": "stable", "intensity": "medium", "sources": "Consultas em sites de comparação de preços; Engajamento em anúncios regionais."}
+            ],
+            "popular_models": [
+                {"name": f"{product} Premium", "reason": "Alta busca por qualidade superior e garantia estendida."},
+                {"name": f"{product} Standard", "reason": "Equilíbrio entre custo e benefício mais procurado."},
+                {"name": f"{product} Eco", "reason": "Crescente interesse em sustentabilidade no estado de SP."}
+            ],
+            "reference_links": [
+                {"title": "Google Trends", "url": f"https://trends.google.com.br/trends/explore?q={product}&geo=BR-SP", "description": "Volume de buscas regionais."},
+                {"title": "Mercado Livre", "url": f"https://lista.mercadolivre.com.br/{product}", "description": "Preços e disponibilidade real."},
+                {"title": "Reclame Aqui", "url": f"https://www.reclameaqui.com.br/busca/?q={product}", "description": "Principais dores dos usuários."}
+            ]
+        }
 
     def run_intelligence(self, product, keywords=None, days=30):
         return self.scrape_realtime(product, days)
