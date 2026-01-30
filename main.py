@@ -45,12 +45,31 @@ HTML_TEMPLATE = """
         <div id="results" class="mt-4"></div>
     </div>
 
+    <!-- Modal de Detalhes Estático -->
+    <div class="modal fade" id="detailsModal" tabindex="-1" aria-hidden="true">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="modalTitle">Detalhes da Fonte</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <p id="modalBody"></p>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         function showDetails(city, neighborhood, details) {
             document.getElementById('modalTitle').innerText = `Fontes: ${city} - ${neighborhood}`;
             document.getElementById('modalBody').innerText = details;
-            var myModal = new bootstrap.Modal(document.getElementById('detailsModal'));
+            var modalEl = document.getElementById('detailsModal');
+            var myModal = bootstrap.Modal.getInstance(modalEl) || new bootstrap.Modal(modalEl);
             myModal.show();
         }
 
@@ -104,7 +123,10 @@ HTML_TEMPLATE = """
                                 <td>${trendIcon} ${item.trend === 'up' ? 'Alta' : (item.trend === 'down' ? 'Queda' : 'Estável')}</td>
                                 <td class="${intensityClass} fw-bold">${item.intensity.toUpperCase()}</td>
                                 <td>
-                                    <button class="btn btn-sm btn-outline-info" onclick="showDetails('${item.city}', '${item.neighborhood}', '${sourceData.replace(/'/g, "\\'")}')">
+                                    <button class="btn btn-sm btn-outline-info btn-details" 
+                                            data-city="${item.city}" 
+                                            data-neighborhood="${item.neighborhood}" 
+                                            data-sources="${sourceData.replace(/"/g, '&quot;')}">
                                         Detalhes
                                     </button>
                                 </td>
@@ -117,26 +139,15 @@ HTML_TEMPLATE = """
                                 </table>
                             </div>
                         </div>
-
-                        <!-- Modal de Detalhes -->
-                        <div class="modal fade" id="detailsModal" tabindex="-1" aria-hidden="true">
-                          <div class="modal-dialog">
-                            <div class="modal-content">
-                              <div class="modal-header">
-                                <h5 class="modal-title" id="modalTitle">Detalhes da Fonte</h5>
-                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                              </div>
-                              <div class="modal-body">
-                                <p id="modalBody"></p>
-                              </div>
-                              <div class="modal-footer">
-                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
                     `;
                     resultsDiv.innerHTML = html;
+
+                    // Adicionar listeners para os botões de detalhes
+                    document.querySelectorAll('.btn-details').forEach(btn => {
+                        btn.onclick = function() {
+                            showDetails(this.dataset.city, this.dataset.neighborhood, this.dataset.sources);
+                        };
+                    });
                 } else {
                     resultsDiv.innerHTML = '<div class="alert alert-info">Nenhuma intenção clara detectada para este produto no período.</div>';
                 }
