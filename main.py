@@ -546,60 +546,74 @@ def tendencias():
 def get_trends():
     region = request.json.get('region')
     
+    # Determinar o nome amigável da região/bairro
     if region and region.startswith("bairro:"):
-        bairro_nome = region.split(":")[1].replace("_", " ").title()
-        
-        prompt = f"Gere uma análise de tendências de consumo EM TEMPO REAL para o bairro {bairro_nome} em São Paulo (Jan 2026). " \
-                 f"Seja extremamente específico sobre o que as pessoas estão buscando agora nesse bairro. " \
-                 f"Retorne 4 produtos/serviços 'hot' com categoria e porcentagem de crescimento, " \
-                 f"e a distribuição de interesse por sub-áreas do bairro em 5 pontos." \
-                 f"Formato JSON: {{\"hot_products\": [{{ \"name\": \"\", \"category\": \"\", \"growth\": 0 }}], \"regions\": [{{ \"name\": \"\", \"value\": 0 }}]}}"
-        
-        try:
-            from engine import client, MODEL
-            response = client.chat.completions.create(
-                model=MODEL,
-                messages=[{"role": "user", "content": prompt}],
-                response_format={"type": "json_object"},
-                timeout=60.0
-            )
-            content = response.choices[0].message.content
-            if content:
-                data = json.loads(content)
-                return jsonify(data)
-        except Exception as e:
-            print(f"Erro na IA de tendências: {e}")
+        loc_nome = region.split(":")[1].replace("_", " ").title()
+        contexto = f"bairro {loc_nome}"
+    else:
+        mapeamento = {
+            "todas": "Estado de São Paulo",
+            "capital": "Capital de São Paulo",
+            "abc": "Grande ABC Paulista",
+            "interior": "Interior Paulista",
+            "litoral": "Litoral Paulista"
+        }
+        loc_nome = mapeamento.get(region, "São Paulo")
+        contexto = f"região {loc_nome}"
+
+    prompt = f"Gere uma análise de tendências de consumo EM TEMPO REAL para a {contexto} em São Paulo (Jan 2026). " \
+             f"Seja extremamente específico sobre o que as pessoas estão buscando agora nessa localidade. " \
+             f"Retorne 4 produtos/serviços 'hot' com categoria e porcentagem de crescimento, " \
+             f"e a distribuição de interesse por sub-áreas/bairros da localidade em 5 pontos." \
+             f"Formato JSON: {{\"hot_products\": [{{ \"name\": \"\", \"category\": \"\", \"growth\": 0 }}], \"regions\": [{{ \"name\": \"\", \"value\": 0 }}]}}"
+    
+    try:
+        from engine import client, MODEL
+        response = client.chat.completions.create(
+            model=MODEL,
+            messages=[{"role": "user", "content": prompt}],
+            response_format={"type": "json_object"},
+            timeout=60.0
+        )
+        content = response.choices[0].message.content
+        if content:
+            data = json.loads(content)
+            return jsonify(data)
+    except Exception as e:
+        print(f"Erro na IA de tendências: {e}")
+        # Fallback se a IA falhar
+        if region and region.startswith("bairro:"):
             return jsonify({
                 "hot_products": [
-                    {"name": f"Delivery Premium em {bairro_nome}", "category": "Gastronomia", "growth": 45},
+                    {"name": f"Delivery Premium em {loc_nome}", "category": "Gastronomia", "growth": 45},
                     {"name": "Serviços Home Office", "category": "Tecnologia", "growth": 32},
                     {"name": "Saúde Preventiva", "category": "Bem-estar", "growth": 28},
                     {"name": "Mobilidade Elétrica", "category": "Transporte", "growth": 15}
                 ],
                 "regions": [
-                    {"name": "Setor A", "value": 30},
-                    {"name": "Setor B", "value": 25},
-                    {"name": "Setor C", "value": 20},
-                    {"name": "Setor D", "value": 15},
-                    {"name": "Setor E", "value": 10}
+                    {"name": "Setor Norte", "value": 30},
+                    {"name": "Setor Sul", "value": 25},
+                    {"name": "Setor Leste", "value": 20},
+                    {"name": "Setor Oeste", "value": 15},
+                    {"name": "Centro", "value": 10}
                 ]
             })
-
-    return jsonify({
-        "hot_products": [
-            {"name": "Ar Condicionado Inverter", "category": "Eletro", "growth": 45},
-            {"name": "Protetor Solar FPS 60+", "category": "Saúde", "growth": 38},
-            {"name": "Cerveja Artesanal IPA", "category": "Bebidas", "growth": 22},
-            {"name": "Bicicleta Elétrica", "category": "Mobilidade", "growth": 15}
-        ],
-        "regions": [
-            {"name": "Centro", "value": 30},
-            {"name": "Zona Sul", "value": 25},
-            {"name": "Zona Leste", "value": 20},
-            {"name": "Zona Oeste", "value": 15},
-            {"name": "Zona Norte", "value": 10}
-        ]
-    })
+        
+        return jsonify({
+            "hot_products": [
+                {"name": "Ar Condicionado Inverter", "category": "Eletro", "growth": 45},
+                {"name": "Protetor Solar FPS 60+", "category": "Saúde", "growth": 38},
+                {"name": "Cerveja Artesanal IPA", "category": "Bebidas", "growth": 22},
+                {"name": "Bicicleta Elétrica", "category": "Mobilidade", "growth": 15}
+            ],
+            "regions": [
+                {"name": "Centro", "value": 30},
+                {"name": "Zona Sul", "value": 25},
+                {"name": "Zona Leste", "value": 20},
+                {"name": "Zona Oeste", "value": 15},
+                {"name": "Zona Norte", "value": 10}
+            ]
+        })
 
 @app.route("/api/analyze", methods=["POST"])
 def analyze():
