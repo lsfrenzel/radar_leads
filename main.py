@@ -224,54 +224,94 @@ HTML_TEMPLATE = """
             const doc = jsPDF('p', 'mm', 'a4');
             const pageWidth = doc.internal.pageSize.getWidth();
             
-            // Título Principal
-            doc.setFillColor(15, 23, 42);
-            doc.rect(0, 0, pageWidth, 40, 'F');
+            // Background dark for header
+            doc.setFillColor(2, 6, 23);
+            doc.rect(0, 0, pageWidth, 50, 'F');
+            
+            // Logo/Title with better styling
             doc.setTextColor(255, 255, 255);
-            doc.setFontSize(22);
-            doc.text("Relatório Inteligência de Mercado", 20, 25);
+            doc.setFont("helvetica", "bold");
+            doc.setFontSize(26);
+            doc.text("RADAR DE LEADS SP", 20, 25);
+            
+            doc.setFont("helvetica", "normal");
             doc.setFontSize(10);
-            doc.text(`RADAR DE LEADS SP - Gerado em: ${new Date().toLocaleString()}`, 20, 33);
+            doc.setTextColor(148, 163, 184);
+            doc.text("Inteligência de Mercado em Tempo Real", 20, 32);
+            doc.text(`Relatório Gerado em: ${new Date().toLocaleString('pt-BR')}`, 20, 38);
             
-            let y = 55;
+            let y = 65;
             
-            // Capturar e adicionar gráfico de tendência
+            // Capturar gráfico de tendência (O gráfico de tendência agora tem background escuro no canvas para bater com o sistema)
             const trendCanvas = document.getElementById('trendChart');
+            
+            // Temporariamente mudar o background do canvas para bater com o sistema no PDF
+            const originalBackground = trendCanvas.style.backgroundColor;
+            trendCanvas.style.backgroundColor = '#0f172a';
+            
             const trendImg = trendCanvas.toDataURL('image/png', 1.0);
+            
             doc.setTextColor(15, 23, 42);
-            doc.setFontSize(14);
+            doc.setFontSize(16);
+            doc.setFont("helvetica", "bold");
             doc.text("1. Análise de Tendência de Mercado", 20, y);
-            y += 8;
+            y += 10;
+            
+            // Adicionar moldura ao gráfico
+            doc.setDrawColor(59, 130, 246);
+            doc.setLineWidth(0.5);
+            doc.rect(19, y - 1, 172, 82);
             doc.addImage(trendImg, 'PNG', 20, y, 170, 80);
             y += 95;
 
-            // Adicionar Tabela de Dados
-            doc.setFontSize(14);
+            // Adicionar Tabela de Dados com melhor design
+            doc.setFontSize(16);
             doc.text("2. Intelligence Feed (Estratificado)", 20, y);
-            y += 10;
+            y += 12;
             
+            // Header da Tabela
+            doc.setFillColor(241, 245, 249);
+            doc.rect(20, y - 6, 170, 10, 'F');
             doc.setFontSize(9);
             doc.setTextColor(100, 116, 139);
-            doc.text("CIDADE / BAIRRO", 20, y);
-            doc.text("DEMANDA", 100, y);
-            doc.text("TENDÊNCIA", 130, y);
-            doc.text("INTENSIDADE", 160, y);
-            y += 5;
-            doc.setDrawColor(226, 232, 240);
-            doc.line(20, y, 190, y);
-            y += 8;
+            doc.text("CIDADE / BAIRRO", 25, y);
+            doc.text("DEMANDA", 95, y);
+            doc.text("TENDÊNCIA", 125, y);
+            doc.text("INTENSIDADE", 155, y);
+            y += 10;
 
             doc.setTextColor(30, 41, 59);
             lastResults.forEach((item, i) => {
-                if (y > 270) { doc.addPage(); y = 20; }
-                doc.setFont(undefined, 'bold');
-                doc.text(`${item.city} - ${item.neighborhood}`, 20, y);
-                doc.setFont(undefined, 'normal');
-                doc.text(`${item.demand_percentage}%`, 100, y);
-                doc.text(`${item.trend.toUpperCase()}`, 130, y);
-                doc.text(`${item.intensity.toUpperCase()}`, 160, y);
+                if (y > 275) { 
+                    doc.addPage(); 
+                    y = 30; 
+                    // Header na nova página
+                    doc.setFillColor(241, 245, 249);
+                    doc.rect(20, y - 6, 170, 10, 'F');
+                    doc.text("CIDADE / BAIRRO", 25, y);
+                    doc.text("DEMANDA", 95, y);
+                    doc.text("TENDÊNCIA", 125, y);
+                    doc.text("INTENSIDADE", 155, y);
+                    y += 10;
+                }
+                
+                // Linha zebra
+                if (i % 2 === 0) {
+                    doc.setFillColor(248, 250, 252);
+                    doc.rect(20, y - 6, 170, 8, 'F');
+                }
+                
+                doc.setFont("helvetica", "bold");
+                doc.text(`${item.city} - ${item.neighborhood}`, 25, y);
+                doc.setFont("helvetica", "normal");
+                doc.text(`${item.demand_percentage}%`, 95, y);
+                doc.text(`${item.trend.toUpperCase()}`, 125, y);
+                doc.text(`${item.intensity.toUpperCase()}`, 155, y);
                 y += 8;
             });
+
+            // Reverter background do canvas
+            trendCanvas.style.backgroundColor = originalBackground;
 
             doc.save(`radar-leads-sp-${new Date().getTime()}.pdf`);
         }
@@ -370,7 +410,9 @@ HTML_TEMPLATE = """
                     }]
                 },
                 options: {
+                    responsive: true,
                     maintainAspectRatio: false,
+                    resizeDelay: 200,
                     scales: {
                         y: { beginAtZero: true, grid: { color: '#334155' }, ticks: { color: '#94a3b8' } },
                         x: { grid: { display: false }, ticks: { color: '#94a3b8' } }
