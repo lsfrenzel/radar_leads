@@ -269,13 +269,28 @@ HTML_TEMPLATE = """
                 Bairro: r.neighborhood,
                 Região: r.region,
                 'Demanda (%)': r.demand_percentage,
-                Tendência: r.trend,
-                Intensidade: r.intensity,
+                Tendência: r.trend.toUpperCase(),
+                Intensidade: r.intensity.toUpperCase(),
                 Fontes: r.sources
             })));
+
+            // Aplicar estilização básica (largura das colunas)
+            const wscols = [
+                {wch: 20}, // Cidade
+                {wch: 20}, // Bairro
+                {wch: 15}, // Região
+                {wch: 15}, // Demanda
+                {wch: 15}, // Tendência
+                {wch: 15}, // Intensidade
+                {wch: 100} // Fontes
+            ];
+            ws['!cols'] = wscols;
+
             const wb = XLSX.utils.book_new();
             XLSX.utils.book_append_sheet(wb, ws, "Leads SP");
-            XLSX.writeFile(wb, "radar-de-leads-sp.xlsx");
+            
+            // Gerar arquivo com nome datado
+            XLSX.writeFile(wb, `radar-leads-sp-${new Date().getTime()}.xlsx`);
         }
 
         function updateDashboard(results) {
