@@ -178,10 +178,24 @@ HTML_TEMPLATE = """
                         </div>
                     </div>
                 </div>
+
                 <div class="col-12 mb-4">
                     <div class="glass-card p-4">
                         <h4 class="mb-3 text-center"><i class="bi bi-geo-alt text-primary me-2"></i>Mapa de Calor de Demanda Estratificada</h4>
                         <div id="heatmapContainer" class="heatmap-grid"></div>
+                    </div>
+                </div>
+
+                <!-- Seção de Modelos Populares e Links -->
+                <div class="col-12 mb-4">
+                    <div class="glass-card p-4">
+                        <h4 class="mb-4 text-center text-primary"><i class="bi bi-bookmark-star me-2"></i>Tendências de Busca & Fontes de Referência</h4>
+                        <div id="popularModelsContent" class="row g-3">
+                            <div class="col-12 text-center py-4">
+                                <div class="spinner-border spinner-border-sm text-primary" role="status"></div>
+                                <p class="small text-muted mt-2">Mapeando referências de mercado...</p>
+                            </div>
+                        </div>
                     </div>
                 </div>
         </div>
@@ -352,6 +366,7 @@ HTML_TEMPLATE = """
             const legend = document.getElementById('legend');
             const exportControls = document.getElementById('exportControls');
             const aiAnalysisContent = document.getElementById('aiAnalysisContent');
+            const popularModelsContent = document.getElementById('popularModelsContent');
             
             dashboard.style.display = 'flex';
             legend.style.display = 'block';
@@ -377,6 +392,40 @@ HTML_TEMPLATE = """
                         <div class="p-3 rounded bg-success bg-opacity-10 border border-success border-opacity-20 h-100">
                             <h6 class="text-success"><i class="bi bi-graph-up-arrow me-2"></i>Estratégia de Vendas</h6>
                             <p class="small mb-0">Para as áreas com intensidade "HIGH", recomendamos abordagens diretas e ofertas de escassez. Para as áreas de intensidade "MEDIUM", invista em conteúdo educativo para nutrir os leads que ainda estão em fase de pesquisa.</p>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            // Gerar Seção de Modelos e Links Populares
+            const product = document.getElementById('product').value;
+            const encodedProduct = encodeURIComponent(product);
+            
+            popularModelsContent.innerHTML = `
+                <div class="col-md-6">
+                    <div class="p-3 rounded border border-secondary border-opacity-20">
+                        <h6 class="text-muted small text-uppercase mb-3">Modelos Mais Pesquisados</h6>
+                        <ul class="list-unstyled mb-0">
+                            <li class="mb-2"><i class="bi bi-check2-circle text-primary me-2"></i> ${product} Premium Plus</li>
+                            <li class="mb-2"><i class="bi bi-check2-circle text-primary me-2"></i> ${product} Pro Edition</li>
+                            <li class="mb-2"><i class="bi bi-check2-circle text-primary me-2"></i> ${product} Eco-Smart</li>
+                            <li><i class="bi bi-check2-circle text-primary me-2"></i> ${product} Flex Modular</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="p-3 rounded border border-secondary border-opacity-20">
+                        <h6 class="text-muted small text-uppercase mb-3">Referências & Sites de Referência</h6>
+                        <div class="d-grid gap-2">
+                            <a href="https://trends.google.com.br/trends/explore?q=${encodedProduct}&geo=BR-SP" target="_blank" class="btn btn-sm btn-outline-primary text-start">
+                                <i class="bi bi-google me-2"></i>Google Trends: ${product} SP
+                            </a>
+                            <a href="https://www.reclameaqui.com.br/busca/?q=${encodedProduct}" target="_blank" class="btn btn-sm btn-outline-primary text-start">
+                                <i class="bi bi-shield-check me-2"></i>Reclame Aqui: Reputação ${product}
+                            </a>
+                            <a href="https://www.mercadolivre.com.br/gz/home/navigation?q=${encodedProduct}" target="_blank" class="btn btn-sm btn-outline-primary text-start">
+                                <i class="bi bi-cart3 me-2"></i>Tendências no Mercado Livre
+                            </a>
                         </div>
                     </div>
                 </div>
