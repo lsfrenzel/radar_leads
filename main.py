@@ -43,9 +43,24 @@ HTML_TEMPLATE = """
         .loading-text { font-family: 'Courier New', monospace; letter-spacing: 2px; color: var(--accent); text-transform: uppercase; animation: pulse 2s infinite; }
         @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
 
-        .table { color: var(--text-main); }
-        .table thead th { background: rgba(255,255,255,0.03); color: var(--text-main); text-transform: uppercase; font-size: 0.75rem; border: none; font-weight: 700; }
-        .table td { border-color: rgba(255,255,255,0.05); vertical-align: middle; }
+        .table { color: var(--text-main); border-collapse: separate; border-spacing: 0 8px; }
+        .table thead th { background: transparent; color: var(--text-muted); text-transform: uppercase; font-size: 0.7rem; border: none; font-weight: 700; letter-spacing: 1px; padding: 12px 20px; }
+        .table tbody tr { background: rgba(255,255,255,0.02); transition: all 0.3s ease; }
+        .table tbody tr:hover { background: rgba(255,255,255,0.05); transform: scale(1.005); }
+        .table td { border: none; padding: 16px 20px; vertical-align: middle; }
+        .table td:first-child { border-radius: 12px 0 0 12px; }
+        .table td:last-child { border-radius: 0 12px 12px 0; }
+        
+        .trend-badge { padding: 4px 10px; border-radius: 20px; font-size: 0.8rem; font-weight: 600; }
+        .trend-up { background: rgba(16, 185, 129, 0.1); color: #10b981; }
+        .trend-down { background: rgba(239, 68, 68, 0.1); color: #ef4444; }
+        .trend-stable { background: rgba(148, 163, 184, 0.1); color: #94a3b8; }
+        
+        .intensity-pill { display: inline-block; padding: 4px 12px; border-radius: 8px; font-size: 0.75rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; }
+        .intensity-high { background: rgba(239, 68, 68, 0.15); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.3); }
+        .intensity-medium { background: rgba(245, 158, 11, 0.15); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.3); }
+        .intensity-low { background: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.3); }
+
         .text-muted { color: #cbd5e1 !important; }
         .small.text-muted { color: #cbd5e1 !important; font-weight: 500; }
         .modal-content { background-color: var(--card-bg); color: var(--text-main); border: 1px solid rgba(255,255,255,0.1); }
@@ -289,23 +304,37 @@ HTML_TEMPLATE = """
                     
                     data.results.forEach((item, index) => {
                         const trendIcon = item.trend === 'up' ? '↗️' : (item.trend === 'down' ? '↘️' : '➡️');
-                        const intensityClass = item.intensity === 'high' ? 'text-danger' : (item.intensity === 'medium' ? 'text-warning' : 'text-success');
+                        const trendClass = item.trend === 'up' ? 'trend-up' : (item.trend === 'down' ? 'trend-down' : 'trend-stable');
+                        const intensityClass = item.intensity === 'high' ? 'intensity-high' : (item.intensity === 'medium' ? 'intensity-medium' : 'intensity-low');
                         const sourceData = item.sources || 'Fontes baseadas em volume de busca, redes sociais e tráfego de varejo regional.';
                         
                         html += `
                             <tr>
-                                <td><strong>${item.city}</strong></td>
-                                <td>${item.neighborhood}</td>
-                                <td><small class="text-muted">${item.region}</small></td>
-                                <td class="fw-bold text-primary">${item.demand_percentage}%</td>
-                                <td>${trendIcon} ${item.trend === 'up' ? 'Alta' : (item.trend === 'down' ? 'Queda' : 'Estável')}</td>
-                                <td class="${intensityClass} fw-bold">${item.intensity.toUpperCase()}</td>
                                 <td>
-                                    <button class="btn btn-sm btn-outline-info btn-details" 
+                                    <div class="d-flex align-items-center">
+                                        <div class="bg-primary rounded-circle me-2" style="width: 8px; height: 8px; box-shadow: 0 0 10px var(--accent);"></div>
+                                        <strong>${item.city}</strong>
+                                    </div>
+                                </td>
+                                <td>${item.neighborhood}</td>
+                                <td><span class="text-muted small">${item.region}</span></td>
+                                <td class="fw-bold text-primary">${item.demand_percentage}%</td>
+                                <td>
+                                    <span class="trend-badge ${trendClass}">
+                                        ${trendIcon} ${item.trend === 'up' ? 'Alta' : (item.trend === 'down' ? 'Queda' : 'Estável')}
+                                    </span>
+                                </td>
+                                <td>
+                                    <span class="intensity-pill ${intensityClass}">
+                                        ${item.intensity}
+                                    </span>
+                                </td>
+                                <td>
+                                    <button class="btn btn-sm btn-outline-info btn-details border-0" 
                                             data-city="${item.city}" 
                                             data-neighborhood="${item.neighborhood}" 
                                             data-sources="${sourceData.replace(/"/g, '&quot;')}">
-                                        Detalhes
+                                        <i class="bi bi-eye"></i>
                                     </button>
                                 </td>
                             </tr>
