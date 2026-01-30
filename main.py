@@ -56,6 +56,42 @@ HTML_TEMPLATE = """
         </div>
 
         <div id="results" class="mt-4"></div>
+        
+        <!-- Legenda do Sistema -->
+        <div id="legend" class="card p-4 mt-4" style="display: none;">
+            <h5 class="mb-3"><i class="bi bi-info-circle"></i> Guia de Indicadores</h5>
+            <div class="row g-4">
+                <div class="col-md-4">
+                    <h6 class="text-primary fw-bold">Demanda (%)</h6>
+                    <p class="small text-muted mb-0">Representa a fatia de interesse do público naquela localidade em relação ao volume total captado no estado de São Paulo.</p>
+                </div>
+                <div class="col-md-4">
+                    <h6 class="text-primary fw-bold">Tendência</h6>
+                    <div class="d-flex align-items-center mb-1">
+                        <span class="me-2">↗️ Alta:</span> <small class="text-muted">Crescimento de buscas e menções.</small>
+                    </div>
+                    <div class="d-flex align-items-center mb-1">
+                        <span class="me-2">➡️ Estável:</span> <small class="text-muted">Volume de interesse constante.</small>
+                    </div>
+                    <div class="d-flex align-items-center">
+                        <span class="me-2">↘️ Queda:</span> <small class="text-muted">Redução no engajamento recente.</small>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <h6 class="text-primary fw-bold">Intensidade</h6>
+                    <div class="d-flex align-items-center mb-1">
+                        <span class="badge heat-high me-2" style="width: 15px; height: 15px; padding: 0;"></span> <small class="text-muted">Crítica: Intenção de compra imediata detectada.</small>
+                    </div>
+                    <div class="d-flex align-items-center mb-1">
+                        <span class="badge heat-medium me-2" style="width: 15px; height: 15px; padding: 0;"></span> <small class="text-muted">Média: Interesse exploratório em crescimento.</small>
+                    </div>
+                    <div class="d-flex align-items-center">
+                        <span class="badge heat-low me-2" style="width: 15px; height: 15px; padding: 0;"></span> <small class="text-muted">Baixa: Sinais iniciais ou volume orgânico estável.</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <div id="dashboard" class="row mt-4" style="display: none;">
             <div class="col-12 mb-4">
                 <div class="card p-4">
@@ -106,7 +142,9 @@ HTML_TEMPLATE = """
 
         function updateDashboard(results) {
             const dashboard = document.getElementById('dashboard');
+            const legend = document.getElementById('legend');
             dashboard.style.display = 'flex';
+            legend.style.display = 'block';
 
             // Curva de Tendência (Simulando variação nos últimos 7 dias baseada na demanda atual)
             const labels = results.map(r => `${r.city} (${r.neighborhood})`);
@@ -169,6 +207,7 @@ HTML_TEMPLATE = """
             e.preventDefault();
             const resultsDiv = document.getElementById('results');
             document.getElementById('dashboard').style.display = 'none';
+            document.getElementById('legend').style.display = 'none';
             resultsDiv.innerHTML = '<div class="text-center"><div class="spinner-border" role="status"></div><p class="mt-2">Escaneando a web e processando inteligência estratificada...</p></div>';
             
             const product = document.getElementById('product').value;
