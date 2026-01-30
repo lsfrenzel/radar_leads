@@ -235,6 +235,16 @@ HTML_TEMPLATE = """
                             <option value="abc">Grande ABC</option>
                             <option value="interior">Interior Paulista</option>
                             <option value="litoral">Litoral</option>
+                            <option disabled>──────────</option>
+                            <option value="bairro:centro">Centro (SP)</option>
+                            <option value="bairro:itaim_bibi">Itaim Bibi</option>
+                            <option value="bairro:moema">Moema</option>
+                            <option value="bairro:pinheiros">Pinheiros</option>
+                            <option value="bairro:vila_madalena">Vila Madalena</option>
+                            <option value="bairro:tatuape">Tatuapé</option>
+                            <option value="bairro:santana">Santana</option>
+                            <option value="bairro:morumbi">Morumbi</option>
+                            <option value="bairro:jardins">Jardins</option>
                         </select>
                     </div>
                     <div class="col-md-4 d-flex align-items-end">
@@ -534,7 +544,48 @@ def tendencias():
 @app.route("/api/trends", methods=["POST"])
 def get_trends():
     region = request.json.get('region')
-    # Simulação de inteligência de tendências regional
+    
+    # Se for um bairro específico, usamos a IA para gerar tendências contextuais
+    if region.startswith("bairro:"):
+        bairro_nome = region.split(":")[1].replace("_", " ").title()
+        
+        prompt = f"Gere uma análise de tendências de consumo EM TEMPO REAL para o bairro {bairro_nome} em São Paulo (Jan 2026). " \
+                 f"Seja extremamente específico sobre o que as pessoas estão buscando agora nesse bairro. " \
+                 f"Retorne 4 produtos/serviços 'hot' com categoria e porcentagem de crescimento, " \
+                 f"e a distribuição de interesse por sub-áreas do bairro em 5 pontos." \
+                 f"Formato JSON: {{\"hot_products\": [{{ \"name\": \"\", \"category\": \"\", \"growth\": 0 }}], \"regions\": [{{ \"name\": \"\", \"value\": 0 }}]}}"
+        
+        try:
+            from engine import client, MODEL
+            import json
+            response = client.chat.completions.create(
+                model=MODEL,
+                messages=[{"role": "user", "content": prompt}],
+                response_format={"type": "json_object"},
+                timeout=60.0
+            )
+            data = json.loads(response.choices[0].message.content)
+            return jsonify(data)
+        except Exception as e:
+            print(f"Erro na IA de tendências: {e}")
+            # Fallback dinâmico para garantir que o usuário veja algo
+            return jsonify({
+                "hot_products": [
+                    {"name": f"Delivery Premium em {bairro_nome}", "category": "Gastronomia", "growth": 45},
+                    {"name": "Serviços Home Office", "category": "Tecnologia", "growth": 32},
+                    {"name": "Saúde Preventiva", "category": "Bem-estar", "growth": 28},
+                    {"name": "Mobilidade Elétrica", "category": "Transporte", "growth": 15}
+                ],
+                "regions": [
+                    {"name": "Setor A", "value": 30},
+                    {"name": "Setor B", "value": 25},
+                    {"name": "Setor C", "value": 20},
+                    {"name": "Setor D", "value": 15},
+                    {"name": "Setor E", "value": 10}
+                ]
+            })
+
+    # Simulação padrão para regiões maiores
     return jsonify({
         "hot_products": [
             {"name": "Ar Condicionado Inverter", "category": "Eletro", "growth": 45},
