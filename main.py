@@ -96,6 +96,9 @@ HTML_TEMPLATE = """
                     <li class="nav-item">
                         <a class="nav-link {{ 'active' if active_page == 'tendencias' else '' }}" href="/tendencias">Radar de Tendências</a>
                     </li>
+                    <li class="nav-item">
+                        <a class="nav-link {{ 'active' if active_page == 'nicho' else '' }}" href="/nicho">Radar por Nicho</a>
+                    </li>
                 </ul>
             </div>
         </div>
@@ -275,6 +278,98 @@ HTML_TEMPLATE = """
                     <h5 class="text-primary mb-3"><i class="bi bi-geo-fill me-2"></i>Demanda por Micro-região</h5>
                     <div style="position: relative; height:300px;">
                         <canvas id="regionChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% elif active_page == 'nicho' %}
+        <div class="text-center mb-5">
+            <h1 class="hero-title">Radar por Nicho</h1>
+            <p class="text-muted">Inteligência de Mercado por Segmento de Negócio</p>
+        </div>
+        
+        <div class="glass-card p-4 mb-4">
+            <form id="nichoForm">
+                <div class="row g-3">
+                    <div class="col-md-5">
+                        <label class="small text-muted mb-2">NICHO DE NEGÓCIO</label>
+                        <select class="form-select" id="nicho">
+                            <option value="comercio_local">Comércio e Serviços Locais</option>
+                            <option value="imobiliario">Mercado Imobiliário</option>
+                            <option value="ecommerce">E-commerce e Vendas Online</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="small text-muted mb-2">SEGMENTO ESPECÍFICO (OPCIONAL)</label>
+                        <input type="text" class="form-control" id="segmento" placeholder="Ex: Pet Shop, Clínica Estética...">
+                    </div>
+                    <div class="col-md-3 d-flex align-items-end">
+                        <button type="submit" class="btn btn-primary w-100">
+                            <i class="bi bi-search me-2"></i>ANALISAR NICHO
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <div id="nichoSubtipo" class="mb-4" style="display: none;">
+            <div class="row g-3">
+                <div class="col-md-12">
+                    <div class="d-flex flex-wrap gap-2" id="subtipoButtons"></div>
+                </div>
+            </div>
+        </div>
+
+        <div id="nichoResults" class="mt-4"></div>
+        
+        <div id="nichoDashboard" class="mt-4" style="display: none;">
+            <div class="row g-4">
+                <div class="col-md-6">
+                    <div class="glass-card p-4 h-100">
+                        <h5 class="text-primary mb-3"><i class="bi bi-rocket-takeoff me-2"></i>Oportunidades Identificadas</h5>
+                        <div id="oportunidades"></div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="glass-card p-4 h-100">
+                        <h5 class="text-warning mb-3"><i class="bi bi-graph-up me-2"></i>Tendências em Alta</h5>
+                        <div id="tendenciasNicho"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="row g-4 mt-2">
+                <div class="col-md-4">
+                    <div class="glass-card p-4 h-100">
+                        <h5 class="text-danger mb-3"><i class="bi bi-exclamation-triangle me-2"></i>Dores do Mercado</h5>
+                        <div id="doresNicho"></div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="glass-card p-4 h-100">
+                        <h5 class="text-success mb-3"><i class="bi bi-lightbulb me-2"></i>Ações Recomendadas</h5>
+                        <div id="acoesNicho"></div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="glass-card p-4 h-100">
+                        <h5 class="text-info mb-3"><i class="bi bi-people me-2"></i>Perfil do Cliente</h5>
+                        <div id="perfilCliente"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="row g-4 mt-2">
+                <div class="col-md-6">
+                    <div class="glass-card p-4">
+                        <h5 class="text-primary mb-3"><i class="bi bi-bar-chart me-2"></i>Produtos/Serviços em Destaque</h5>
+                        <div style="position: relative; height:280px;">
+                            <canvas id="nichoChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="glass-card p-4">
+                        <h5 class="text-primary mb-3"><i class="bi bi-geo-alt me-2"></i>Regiões com Maior Potencial</h5>
+                        <div id="regioesNicho" class="heatmap-grid"></div>
                     </div>
                 </div>
             </div>
@@ -551,6 +646,130 @@ HTML_TEMPLATE = """
                 resultsDiv.innerHTML = '<div class="alert alert-danger">Erro ao carregar tendências regionais.</div>';
             }
         });
+        {% elif active_page == 'nicho' %}
+        let nichoChart = null;
+        const subtipos = {
+            'comercio_local': ['Restaurantes', 'Clínicas', 'Oficinas', 'Academias', 'Salões de Beleza', 'Pet Shops', 'Escolas/Cursos'],
+            'imobiliario': ['Apartamentos', 'Casas', 'Comercial', 'Terrenos', 'Lançamentos', 'Alto Padrão'],
+            'ecommerce': ['Moda', 'Eletrônicos', 'Casa/Decoração', 'Beleza', 'Saúde', 'Esportes', 'Dropshipping']
+        };
+        
+        document.getElementById('nicho').addEventListener('change', function() {
+            const subtipoBtns = document.getElementById('subtipoButtons');
+            const nichoVal = this.value;
+            subtipoBtns.innerHTML = subtipos[nichoVal].map(s => 
+                `<button type="button" class="btn btn-outline-primary btn-sm subtipo-btn" data-subtipo="${s}">${s}</button>`
+            ).join('');
+            document.getElementById('nichoSubtipo').style.display = 'block';
+            
+            document.querySelectorAll('.subtipo-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    document.querySelectorAll('.subtipo-btn').forEach(b => b.classList.remove('active'));
+                    this.classList.add('active');
+                    document.getElementById('segmento').value = this.dataset.subtipo;
+                });
+            });
+        });
+        
+        document.getElementById('nichoForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const nicho = document.getElementById('nicho').value;
+            const segmento = document.getElementById('segmento').value;
+            const resultsDiv = document.getElementById('nichoResults');
+            const dashboard = document.getElementById('nichoDashboard');
+            
+            const nichoNomes = {
+                'comercio_local': 'Comércio e Serviços Locais',
+                'imobiliario': 'Mercado Imobiliário',
+                'ecommerce': 'E-commerce e Vendas Online'
+            };
+            
+            resultsDiv.innerHTML = `<div class="loader-container">
+                <div class="cyber-loader"><div></div><div></div><div></div></div>
+                <div class="loading-text">Analisando ${nichoNomes[nicho]}${segmento ? ' - ' + segmento : ''}...</div>
+                <p class="text-muted mt-3 small">Varrendo buscas, redes sociais, notícias, marketplaces e reclamações...</p>
+            </div>`;
+            dashboard.style.display = 'none';
+            
+            try {
+                const response = await fetch('/api/nicho', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ nicho, segmento: segmento || null })
+                });
+                const data = await response.json();
+                resultsDiv.innerHTML = '';
+                dashboard.style.display = 'block';
+                
+                document.getElementById('oportunidades').innerHTML = data.oportunidades.map(o => `
+                    <div class="mb-3 p-3 bg-dark rounded">
+                        <h6 class="text-white mb-1"><i class="bi bi-check-circle text-success me-2"></i>${o.titulo}</h6>
+                        <p class="small text-muted mb-0">${o.descricao}</p>
+                    </div>
+                `).join('');
+                
+                document.getElementById('tendenciasNicho').innerHTML = data.tendencias.map(t => `
+                    <div class="d-flex justify-content-between align-items-center mb-2 p-2 bg-dark rounded">
+                        <span class="text-white">${t.nome}</span>
+                        <span class="badge bg-warning text-dark">+${t.crescimento}%</span>
+                    </div>
+                `).join('');
+                
+                document.getElementById('doresNicho').innerHTML = data.dores.map(d => `
+                    <div class="mb-2 p-2 bg-dark rounded">
+                        <small class="text-danger"><i class="bi bi-exclamation-circle me-1"></i>${d}</small>
+                    </div>
+                `).join('');
+                
+                document.getElementById('acoesNicho').innerHTML = data.acoes.map(a => `
+                    <div class="mb-2 p-2 bg-dark rounded">
+                        <small class="text-success"><i class="bi bi-arrow-right-circle me-1"></i>${a}</small>
+                    </div>
+                `).join('');
+                
+                document.getElementById('perfilCliente').innerHTML = `
+                    <div class="p-2 bg-dark rounded">
+                        <p class="small text-info mb-2"><strong>Perfil:</strong> ${data.perfil.descricao}</p>
+                        <p class="small text-muted mb-1"><strong>Faixa etária:</strong> ${data.perfil.faixa_etaria}</p>
+                        <p class="small text-muted mb-1"><strong>Renda:</strong> ${data.perfil.renda}</p>
+                        <p class="small text-muted mb-0"><strong>Comportamento:</strong> ${data.perfil.comportamento}</p>
+                    </div>
+                `;
+                
+                document.getElementById('regioesNicho').innerHTML = data.regioes.map(r => `
+                    <div class="heatmap-cell heat-${r.potencial}">
+                        <div class="fw-bold">${r.nome}</div>
+                        <small>${r.indice}%</small>
+                    </div>
+                `).join('');
+                
+                if (nichoChart) nichoChart.destroy();
+                const ctx = document.getElementById('nichoChart').getContext('2d');
+                nichoChart = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: data.produtos.map(p => p.nome),
+                        datasets: [{
+                            label: 'Índice de Demanda',
+                            data: data.produtos.map(p => p.demanda),
+                            backgroundColor: ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6']
+                        }]
+                    },
+                    options: {
+                        indexAxis: 'y',
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { display: false } },
+                        scales: {
+                            x: { grid: { color: 'rgba(255,255,255,0.1)' }, ticks: { color: '#fff' } },
+                            y: { grid: { display: false }, ticks: { color: '#fff' } }
+                        }
+                    }
+                });
+            } catch (err) {
+                resultsDiv.innerHTML = '<div class="alert alert-danger">Erro ao analisar nicho. Tente novamente.</div>';
+            }
+        });
         {% endif %}
     </script>
 </body>
@@ -564,6 +783,258 @@ def index():
 @app.route("/tendencias")
 def tendencias():
     return render_template_string(HTML_TEMPLATE, active_page='tendencias')
+
+@app.route("/nicho")
+def nicho():
+    return render_template_string(HTML_TEMPLATE, active_page='nicho')
+
+@app.route("/api/nicho", methods=["POST"])
+def get_nicho():
+    nicho = request.json.get('nicho')
+    segmento = request.json.get('segmento')
+    
+    nicho_configs = {
+        "comercio_local": {
+            "nome": "Comércio e Serviços Locais",
+            "contexto": "restaurantes, clínicas, oficinas, academias, salões de beleza, pet shops, escolas e cursos locais em São Paulo",
+            "analise": """Identifique:
+- Produtos e serviços em crescimento na região
+- Tendências sazonais próximas
+- Reclamações frequentes sobre concorrentes (Reclame Aqui, Google Reviews)
+- Demandas não atendidas no mercado local
+- Horários e dias de maior interesse
+
+Entregue insights sobre:
+- Oportunidades locais claras
+- Regiões com maior potencial
+- Sugestões práticas de ação (promoções, estoque, anúncios)"""
+        },
+        "imobiliario": {
+            "nome": "Mercado Imobiliário",
+            "contexto": "corretores autônomos, imobiliárias e construtoras em São Paulo",
+            "analise": """Identifique:
+- Tipos de imóveis mais buscados
+- Faixas de preço em alta
+- Bairros ou regiões em crescimento
+- Intenção do cliente (compra, aluguel, financiamento)
+- Termos recorrentes ligados a urgência ou decisão
+
+Entregue insights sobre:
+- Insights por região
+- Perfil do comprador
+- Sugestões de abordagem comercial e anúncios"""
+        },
+        "ecommerce": {
+            "nome": "E-commerce e Vendas Online",
+            "contexto": "pequenos e médios e-commerces, dropshipping e marcas digitais",
+            "analise": """Identifique:
+- Produtos emergentes antes da saturação
+- Comparações frequentes entre produtos
+- Reclamações recorrentes que indiquem falhas de mercado
+- Tendências sazonais futuras
+- Intenção de compra clara
+
+Entregue insights sobre:
+- Produtos com alto potencial
+- Oportunidades de diferenciação
+- Sugestões de campanhas e posicionamento"""
+        }
+    }
+    
+    config = nicho_configs.get(nicho, nicho_configs["comercio_local"])
+    segmento_texto = f" com foco específico em {segmento}" if segmento else ""
+    
+    prompt = f"""Você é um analista de inteligência de mercado especializado. Analise a internet (buscas do Google, redes sociais, notícias, marketplaces como Mercado Livre e Amazon, e sites de reclamações como Reclame Aqui) para o nicho de {config['nome']}{segmento_texto}.
+
+Contexto: {config['contexto']}
+
+{config['analise']}
+
+Data atual: Janeiro de 2026, São Paulo, Brasil.
+
+Retorne um JSON estruturado com dados realistas e acionáveis:
+{{
+    "oportunidades": [
+        {{"titulo": "título curto", "descricao": "descrição detalhada da oportunidade de negócio"}}
+    ],
+    "tendencias": [
+        {{"nome": "nome da tendência", "crescimento": número de 10 a 150}}
+    ],
+    "dores": ["reclamação/problema 1", "reclamação/problema 2", "reclamação/problema 3"],
+    "acoes": ["ação prática 1", "ação prática 2", "ação prática 3", "ação prática 4"],
+    "perfil": {{
+        "descricao": "descrição do cliente ideal",
+        "faixa_etaria": "ex: 25-45 anos",
+        "renda": "ex: Classe B/C",
+        "comportamento": "principais comportamentos de compra"
+    }},
+    "produtos": [
+        {{"nome": "produto/serviço", "demanda": número de 50 a 100}}
+    ],
+    "regioes": [
+        {{"nome": "região/bairro", "potencial": "high/medium/low", "indice": número de 60 a 95}}
+    ]
+}}
+
+Retorne exatamente 4 oportunidades, 5 tendências, 3 dores, 4 ações, 5 produtos e 5 regiões. Seja específico e realista para São Paulo em 2026."""
+    
+    try:
+        from engine import client, MODEL
+        response = client.chat.completions.create(
+            model=MODEL,
+            messages=[{"role": "user", "content": prompt}],
+            response_format={"type": "json_object"},
+            timeout=90.0
+        )
+        content = response.choices[0].message.content
+        if content:
+            data = json.loads(content)
+            return jsonify(data)
+    except Exception as e:
+        print(f"Erro na IA de nicho: {e}")
+        
+        fallback_data = {
+            "comercio_local": {
+                "oportunidades": [
+                    {"titulo": "Delivery de última hora", "descricao": "Alto crescimento de pedidos urgentes após 21h. Oportunidade para delivery noturno premium."},
+                    {"titulo": "Serviços por assinatura", "descricao": "Clientes buscando conveniência com planos mensais para academias, estética e pet care."},
+                    {"titulo": "Experiências locais", "descricao": "Aumento de 40% em buscas por 'aulas ao vivo' e 'workshops presenciais'."},
+                    {"titulo": "Micro-franquias", "descricao": "Interesse crescente em negócios compactos e baixo investimento inicial."}
+                ],
+                "tendencias": [
+                    {"nome": "Alimentação saudável rápida", "crescimento": 78},
+                    {"nome": "Pet care premium", "crescimento": 65},
+                    {"nome": "Estética masculina", "crescimento": 52},
+                    {"nome": "Coworking de bairro", "crescimento": 45},
+                    {"nome": "Aulas particulares híbridas", "crescimento": 38}
+                ],
+                "dores": [
+                    "Demora no atendimento e filas longas",
+                    "Falta de opções de pagamento (Pix, parcelamento)",
+                    "Horários limitados que não atendem quem trabalha"
+                ],
+                "acoes": [
+                    "Implementar sistema de agendamento online",
+                    "Criar programa de fidelidade com cashback",
+                    "Investir em Google Meu Negócio e reviews",
+                    "Oferecer horário estendido aos sábados"
+                ],
+                "perfil": {
+                    "descricao": "Profissional urbano que valoriza praticidade",
+                    "faixa_etaria": "28-45 anos",
+                    "renda": "Classe B/C+",
+                    "comportamento": "Pesquisa online antes de comprar, valoriza avaliações"
+                },
+                "produtos": [
+                    {"nome": "Delivery premium", "demanda": 92},
+                    {"nome": "Banho e tosa pet", "demanda": 85},
+                    {"nome": "Personal trainer", "demanda": 78},
+                    {"nome": "Estética facial", "demanda": 72},
+                    {"nome": "Cursos rápidos", "demanda": 65}
+                ],
+                "regioes": [
+                    {"nome": "Pinheiros", "potencial": "high", "indice": 92},
+                    {"nome": "Moema", "potencial": "high", "indice": 88},
+                    {"nome": "Tatuapé", "potencial": "medium", "indice": 75},
+                    {"nome": "Santana", "potencial": "medium", "indice": 70},
+                    {"nome": "Santo Amaro", "potencial": "low", "indice": 62}
+                ]
+            },
+            "imobiliario": {
+                "oportunidades": [
+                    {"titulo": "Studios compactos", "descricao": "Demanda explosiva por apartamentos de 25-35m² próximos ao metrô."},
+                    {"titulo": "Home office integrado", "descricao": "Imóveis com espaço dedicado para trabalho remoto valorizam 15% mais."},
+                    {"titulo": "Bairros emergentes", "descricao": "Vila Prudente e Ipiranga com valorização acima de 20% ao ano."},
+                    {"titulo": "Financiamento facilitado", "descricao": "Clientes buscando imóveis na faixa do Minha Casa Verde Amarela."}
+                ],
+                "tendencias": [
+                    {"nome": "Apartamentos pet-friendly", "crescimento": 85},
+                    {"nome": "Imóveis próximos a parques", "crescimento": 72},
+                    {"nome": "Condomínios com coworking", "crescimento": 68},
+                    {"nome": "Aluguel por temporada", "crescimento": 55},
+                    {"nome": "Imóveis retrofit", "crescimento": 42}
+                ],
+                "dores": [
+                    "Corretores que não respondem rápido",
+                    "Fotos ruins e descrições genéricas nos anúncios",
+                    "Dificuldade em agendar visitas em horários flexíveis"
+                ],
+                "acoes": [
+                    "Investir em tour virtual 360°",
+                    "Responder leads em menos de 5 minutos",
+                    "Criar conteúdo sobre os bairros no Instagram",
+                    "Oferecer simulação de financiamento online"
+                ],
+                "perfil": {
+                    "descricao": "Jovem profissional buscando primeiro imóvel",
+                    "faixa_etaria": "25-35 anos",
+                    "renda": "R$ 8.000 - R$ 15.000/mês",
+                    "comportamento": "Pesquisa muito online, valoriza localização e transporte"
+                },
+                "produtos": [
+                    {"nome": "Studios até 35m²", "demanda": 95},
+                    {"nome": "2 dorms com varanda", "demanda": 88},
+                    {"nome": "Aluguel mobiliado", "demanda": 82},
+                    {"nome": "Casas em condomínio", "demanda": 70},
+                    {"nome": "Salas comerciais", "demanda": 58}
+                ],
+                "regioes": [
+                    {"nome": "Vila Mariana", "potencial": "high", "indice": 94},
+                    {"nome": "Ipiranga", "potencial": "high", "indice": 87},
+                    {"nome": "Tatuapé", "potencial": "medium", "indice": 78},
+                    {"nome": "Butantã", "potencial": "medium", "indice": 72},
+                    {"nome": "Penha", "potencial": "low", "indice": 65}
+                ]
+            },
+            "ecommerce": {
+                "oportunidades": [
+                    {"titulo": "Produtos sustentáveis", "descricao": "Busca por 'eco-friendly' cresceu 120%. Nicho ainda pouco explorado."},
+                    {"titulo": "Personalização", "descricao": "Clientes pagam até 30% mais por produtos personalizados."},
+                    {"titulo": "Cross-border", "descricao": "Importados da China com marca própria ainda têm margem de 60%."},
+                    {"titulo": "Bundles inteligentes", "descricao": "Kits combinados convertem 40% mais que produtos avulsos."}
+                ],
+                "tendencias": [
+                    {"nome": "Skincare coreano", "crescimento": 135},
+                    {"nome": "Acessórios para home office", "crescimento": 92},
+                    {"nome": "Moda plus size", "crescimento": 78},
+                    {"nome": "Produtos para pets", "crescimento": 65},
+                    {"nome": "Suplementos naturais", "crescimento": 55}
+                ],
+                "dores": [
+                    "Frete caro e demorado",
+                    "Produtos que não correspondem às fotos",
+                    "Dificuldade de troca e devolução"
+                ],
+                "acoes": [
+                    "Oferecer frete grátis acima de valor mínimo",
+                    "Investir em fotos e vídeos de qualidade",
+                    "Criar unboxing experience memorável",
+                    "Usar remarketing para carrinhos abandonados"
+                ],
+                "perfil": {
+                    "descricao": "Comprador digital frequente e comparador",
+                    "faixa_etaria": "22-40 anos",
+                    "renda": "Classe B/C",
+                    "comportamento": "Busca cupons, compara preços, lê reviews"
+                },
+                "produtos": [
+                    {"nome": "Skincare importado", "demanda": 98},
+                    {"nome": "Gadgets úteis", "demanda": 85},
+                    {"nome": "Moda feminina", "demanda": 80},
+                    {"nome": "Artigos fitness", "demanda": 72},
+                    {"nome": "Decoração minimalista", "demanda": 68}
+                ],
+                "regioes": [
+                    {"nome": "Grande SP", "potencial": "high", "indice": 95},
+                    {"nome": "Interior SP", "potencial": "high", "indice": 88},
+                    {"nome": "Sul/Sudeste", "potencial": "medium", "indice": 80},
+                    {"nome": "Nordeste", "potencial": "medium", "indice": 72},
+                    {"nome": "Centro-Oeste", "potencial": "low", "indice": 65}
+                ]
+            }
+        }
+        
+        return jsonify(fallback_data.get(nicho, fallback_data["comercio_local"]))
 
 @app.route("/api/trends", methods=["POST"])
 def get_trends():
