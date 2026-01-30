@@ -44,8 +44,14 @@ HTML_TEMPLATE = """
         @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
 
         .table { color: var(--text-main); }
-        .table thead th { background: rgba(255,255,255,0.03); color: var(--text-muted); text-transform: uppercase; font-size: 0.75rem; border: none; }
+        .table thead th { background: rgba(255,255,255,0.03); color: var(--text-main); text-transform: uppercase; font-size: 0.75rem; border: none; font-weight: 700; }
         .table td { border-color: rgba(255,255,255,0.05); vertical-align: middle; }
+        .text-muted { color: #cbd5e1 !important; }
+        .small.text-muted { color: #cbd5e1 !important; font-weight: 500; }
+        .modal-content { background-color: var(--card-bg); color: var(--text-main); border: 1px solid rgba(255,255,255,0.1); }
+        .modal-header { border-bottom: 1px solid rgba(255,255,255,0.1); }
+        .modal-footer { border-top: 1px solid rgba(255,255,255,0.1); }
+        .btn-close { filter: invert(1) grayscale(100%) brightness(200%); }
         .heatmap-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 15px; }
         .heatmap-cell { border: 1px solid rgba(255,255,255,0.05); cursor: pointer; }
     </style>
