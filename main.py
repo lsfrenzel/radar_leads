@@ -405,6 +405,18 @@ HTML_TEMPLATE = """
         </div>
 
         <div id="trendsResults" class="mt-4"></div>
+        
+        <div id="trendsExportControls" class="glass-card p-4 mt-4" style="display: none;">
+            <div class="d-flex justify-content-center gap-3">
+                <button class="btn btn-outline-light" onclick="exportTrendsToExcel()">
+                    <i class="bi bi-file-earmark-excel me-2"></i>Exportar Excel (.xlsx)
+                </button>
+                <button class="btn btn-outline-light" onclick="exportTrendsToPDF()">
+                    <i class="bi bi-file-earmark-pdf me-2"></i>Exportar PDF (.pdf)
+                </button>
+            </div>
+        </div>
+
         <div id="trendsDashboard" class="row mt-4" style="display: none;">
             <div class="col-md-6 mb-4">
                 <div class="glass-card p-4">
@@ -461,6 +473,17 @@ HTML_TEMPLATE = """
 
         <div id="nichoResults" class="mt-4"></div>
         
+        <div id="nichoExportControls" class="glass-card p-4 mt-4" style="display: none;">
+            <div class="d-flex justify-content-center gap-3">
+                <button class="btn btn-outline-light" onclick="exportNichoToExcel()">
+                    <i class="bi bi-file-earmark-excel me-2"></i>Exportar Excel (.xlsx)
+                </button>
+                <button class="btn btn-outline-light" onclick="exportNichoToPDF()">
+                    <i class="bi bi-file-earmark-pdf me-2"></i>Exportar PDF (.pdf)
+                </button>
+            </div>
+        </div>
+
         <div id="nichoDashboard" class="mt-4" style="display: none;">
             <div class="row g-4">
                 <div class="col-md-6">
@@ -803,8 +826,10 @@ HTML_TEMPLATE = """
                     body: JSON.stringify({ region, cep: cep || null })
                 });
                 const data = await response.json();
+                window.lastTrendsData = data; // Store for export
                 resultsDiv.innerHTML = '';
                 dashboard.style.display = 'flex';
+                document.getElementById('trendsExportControls').style.display = 'block';
                 const hotDiv = document.getElementById('hotProducts');
                 hotDiv.innerHTML = data.hot_products.map(p => `
                     <a href="${p.url}" target="_blank" class="list-group-item list-group-item-action bg-transparent border-0 d-flex justify-content-between align-items-center text-decoration-none">
@@ -887,8 +912,10 @@ HTML_TEMPLATE = """
                     body: JSON.stringify({ nicho, segmento: segmento || null })
                 });
                 const data = await response.json();
+                window.lastNichoData = data; // Store for export
                 resultsDiv.innerHTML = '';
                 dashboard.style.display = 'block';
+                document.getElementById('nichoExportControls').style.display = 'block';
                 
                 document.getElementById('oportunidades').innerHTML = data.oportunidades.map(o => `
                     <div class="mb-3 p-3 bg-dark rounded">
