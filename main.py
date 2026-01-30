@@ -45,7 +45,15 @@ HTML_TEMPLATE = """
         <div id="results" class="mt-4"></div>
     </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
+        function showDetails(city, neighborhood, details) {
+            document.getElementById('modalTitle').innerText = `Fontes: ${city} - ${neighborhood}`;
+            document.getElementById('modalBody').innerText = details;
+            var myModal = new bootstrap.Modal(document.getElementById('detailsModal'));
+            myModal.show();
+        }
+
         document.getElementById('searchForm').onsubmit = async (e) => {
             e.preventDefault();
             const resultsDiv = document.getElementById('results');
@@ -76,14 +84,16 @@ HTML_TEMPLATE = """
                                             <th>Demanda (%)</th>
                                             <th>Tendência</th>
                                             <th>Intensidade</th>
+                                            <th>Ações</th>
                                         </tr>
                                     </thead>
                                     <tbody>
                     `;
                     
-                    data.results.forEach(item => {
+                    data.results.forEach((item, index) => {
                         const trendIcon = item.trend === 'up' ? '↗️' : (item.trend === 'down' ? '↘️' : '➡️');
                         const intensityClass = item.intensity === 'high' ? 'text-danger' : (item.intensity === 'medium' ? 'text-warning' : 'text-success');
+                        const sourceData = item.sources || 'Fontes baseadas em volume de busca, redes sociais e tráfego de varejo regional.';
                         
                         html += `
                             <tr>
@@ -93,6 +103,11 @@ HTML_TEMPLATE = """
                                 <td class="fw-bold text-primary">${item.demand_percentage}%</td>
                                 <td>${trendIcon} ${item.trend === 'up' ? 'Alta' : (item.trend === 'down' ? 'Queda' : 'Estável')}</td>
                                 <td class="${intensityClass} fw-bold">${item.intensity.toUpperCase()}</td>
+                                <td>
+                                    <button class="btn btn-sm btn-outline-info" onclick="showDetails('${item.city}', '${item.neighborhood}', '${sourceData.replace(/'/g, "\\'")}')">
+                                        Detalhes
+                                    </button>
+                                </td>
                             </tr>
                         `;
                     });
@@ -101,6 +116,24 @@ HTML_TEMPLATE = """
                                     </tbody>
                                 </table>
                             </div>
+                        </div>
+
+                        <!-- Modal de Detalhes -->
+                        <div class="modal fade" id="detailsModal" tabindex="-1" aria-hidden="true">
+                          <div class="modal-dialog">
+                            <div class="modal-content">
+                              <div class="modal-header">
+                                <h5 class="modal-title" id="modalTitle">Detalhes da Fonte</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                              </div>
+                              <div class="modal-body">
+                                <p id="modalBody"></p>
+                              </div>
+                              <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+                              </div>
+                            </div>
+                          </div>
                         </div>
                     `;
                     resultsDiv.innerHTML = html;
