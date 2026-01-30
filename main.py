@@ -208,27 +208,59 @@ HTML_TEMPLATE = """
 
         async function exportToPDF() {
             const { jsPDF } = window.jspdf;
-            const doc = jsPDF();
+            const doc = jsPDF('p', 'mm', 'a4');
+            const pageWidth = doc.internal.pageSize.getWidth();
             
-            doc.setFontSize(18);
-            doc.text("Relatório Radar de Leads SP", 20, 20);
-            doc.setFontSize(12);
-            doc.text(`Data: ${new Date().toLocaleDateString()}`, 20, 30);
+            // Título Principal
+            doc.setFillColor(15, 23, 42);
+            doc.rect(0, 0, pageWidth, 40, 'F');
+            doc.setTextColor(255, 255, 255);
+            doc.setFontSize(22);
+            doc.text("Relatório Inteligência de Mercado", 20, 25);
+            doc.setFontSize(10);
+            doc.text(`RADAR DE LEADS SP - Gerado em: ${new Date().toLocaleString()}`, 20, 33);
             
-            let y = 45;
+            let y = 55;
+            
+            // Capturar e adicionar gráfico de tendência
+            const trendCanvas = document.getElementById('trendChart');
+            const trendImg = trendCanvas.toDataURL('image/png', 1.0);
+            doc.setTextColor(15, 23, 42);
             doc.setFontSize(14);
-            doc.text("Intelligence Feed:", 20, y);
+            doc.text("1. Análise de Tendência de Mercado", 20, y);
+            y += 8;
+            doc.addImage(trendImg, 'PNG', 20, y, 170, 80);
+            y += 95;
+
+            // Adicionar Tabela de Dados
+            doc.setFontSize(14);
+            doc.text("2. Intelligence Feed (Estratificado)", 20, y);
             y += 10;
             
-            doc.setFontSize(10);
+            doc.setFontSize(9);
+            doc.setTextColor(100, 116, 139);
+            doc.text("CIDADE / BAIRRO", 20, y);
+            doc.text("DEMANDA", 100, y);
+            doc.text("TENDÊNCIA", 130, y);
+            doc.text("INTENSIDADE", 160, y);
+            y += 5;
+            doc.setDrawColor(226, 232, 240);
+            doc.line(20, y, 190, y);
+            y += 8;
+
+            doc.setTextColor(30, 41, 59);
             lastResults.forEach((item, i) => {
                 if (y > 270) { doc.addPage(); y = 20; }
-                const line = `${item.city} (${item.neighborhood}) - Demanda: ${item.demand_percentage}% - Intensidade: ${item.intensity}`;
-                doc.text(line, 20, y);
-                y += 7;
+                doc.setFont(undefined, 'bold');
+                doc.text(`${item.city} - ${item.neighborhood}`, 20, y);
+                doc.setFont(undefined, 'normal');
+                doc.text(`${item.demand_percentage}%`, 100, y);
+                doc.text(`${item.trend.toUpperCase()}`, 130, y);
+                doc.text(`${item.intensity.toUpperCase()}`, 160, y);
+                y += 8;
             });
 
-            doc.save("radar-de-leads-sp.pdf");
+            doc.save(`radar-leads-sp-${new Date().getTime()}.pdf`);
         }
 
         function exportToExcel() {
