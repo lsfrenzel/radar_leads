@@ -63,7 +63,13 @@ class MarketIntelligenceEngine:
                     "url": "https://example.com",
                     "description": "Why this site is relevant"
                 }}
-            ]
+            ],
+            "consumer_behavior": {{
+                "preferred_channels": ["Channel 1", "Channel 2"],
+                "purchase_factors": ["Factor 1", "Factor 2"],
+                "demographic_profile": "Profile description",
+                "peak_hours": "Time range"
+            }}
         }}
         """
         
@@ -81,7 +87,13 @@ class MarketIntelligenceEngine:
                 return {
                     "stratified_data": data.get('stratified_data', []),
                     "popular_models": data.get('popular_models', []),
-                    "reference_links": data.get('reference_links', [])
+                    "reference_links": data.get('reference_links', []),
+                    "consumer_behavior": data.get('consumer_behavior', {
+                        "preferred_channels": ["N/A"],
+                        "purchase_factors": ["N/A"],
+                        "demographic_profile": "N/A",
+                        "peak_hours": "N/A"
+                    })
                 }
         except Exception as e:
             print(f"Erro na varredura: {e}")
@@ -104,7 +116,13 @@ class MarketIntelligenceEngine:
                 {"title": "Google Trends", "url": f"https://trends.google.com.br/trends/explore?q={product}&geo=BR-SP", "description": "Volume de buscas regionais."},
                 {"title": "Mercado Livre", "url": f"https://lista.mercadolivre.com.br/{product}", "description": "Preços e disponibilidade real."},
                 {"title": "Reclame Aqui", "url": f"https://www.reclameaqui.com.br/busca/?q={product}", "description": "Principais dores dos usuários."}
-            ]
+            ],
+            "consumer_behavior": {
+                "preferred_channels": ["Marketplaces (ML/Amazon)", "Instagram Shopping", "Busca Orgânica Google"],
+                "purchase_factors": ["Prazo de Entrega (SP Capital)", "Reputação da Marca", "Cupons de Desconto"],
+                "demographic_profile": "Público economicamente ativo (25-55 anos), Classe A/B/C",
+                "peak_hours": "Seg-Sex: 12h-14h e 19h-22h"
+            }
         }
 
     def run_intelligence(self, product, keywords=None, days=30):

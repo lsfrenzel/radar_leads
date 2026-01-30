@@ -186,19 +186,6 @@ HTML_TEMPLATE = """
                     </div>
                 </div>
 
-                <!-- Seção de Modelos Populares e Links -->
-                <div class="col-12 mb-4">
-                    <div class="glass-card p-4">
-                        <h4 class="mb-4 text-center text-primary"><i class="bi bi-bookmark-star me-2"></i>Tendências de Busca & Fontes de Referência</h4>
-                        <div id="popularModelsContent" class="row g-3">
-                            <div class="col-12 text-center py-4">
-                                <div class="spinner-border spinner-border-sm text-primary" role="status"></div>
-                                <p class="small text-muted mt-2">Mapeando referências de mercado...</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-        </div>
     </div>
 
     <!-- Modal de Detalhes Estático -->
@@ -360,67 +347,6 @@ HTML_TEMPLATE = """
             XLSX.writeFile(wb, `radar-leads-sp-${new Date().getTime()}.xlsx`);
         }
 
-        function updateDashboard(data) {
-            const results = data.stratified_data || [];
-            const popularModels = data.popular_models || [];
-            const referenceLinks = data.reference_links || [];
-            
-            lastResults = results;
-            const dashboard = document.getElementById('dashboard');
-            const legend = document.getElementById('legend');
-            const exportControls = document.getElementById('exportControls');
-            const aiAnalysisContent = document.getElementById('aiAnalysisContent');
-            const popularModelsContent = document.getElementById('popularModelsContent');
-            
-            dashboard.style.display = 'flex';
-            legend.style.display = 'block';
-            exportControls.style.display = 'block';
-
-            // Gerar análise estratégica baseada nos dados
-            if (results.length > 0) {
-                const topLocation = results[0];
-                const highIntensityCount = results.filter(r => r.intensity === 'high').length;
-                
-                aiAnalysisContent.innerHTML = `
-                    <div class="mb-3">
-                        <p>Com base na varredura realizada, detectamos um volume crítico de interesse em <strong>${topLocation.city} (${topLocation.neighborhood})</strong>, que lidera com <strong>${topLocation.demand_percentage}%</strong> da demanda estadual. Identificamos <strong>${highIntensityCount} áreas de alta intensidade</strong> onde o ciclo de decisão de compra está em estágio avançado.</p>
-                    </div>
-                    <div class="row g-3">
-                        <div class="col-md-6">
-                            <div class="p-3 rounded bg-primary bg-opacity-10 border border-primary border-opacity-20 h-100">
-                                <h6 class="text-primary"><i class="bi bi-rocket-takeoff me-2"></i>Oportunidade de Ouro</h6>
-                                <p class="small mb-0">Focar campanhas geolocalizadas em <strong>${topLocation.city}</strong>. A tendência é de <strong>${topLocation.trend === 'up' ? 'alta aceleração' : 'estabilidade sólida'}</strong>, sugerindo que o custo de aquisição (CAC) tende a ser menor nessas regiões agora.</p>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="p-3 rounded bg-success bg-opacity-10 border border-success border-opacity-20 h-100">
-                                <h6 class="text-success"><i class="bi bi-graph-up-arrow me-2"></i>Estratégia de Vendas</h6>
-                                <p class="small mb-0">Para as áreas com intensidade "HIGH", recomendamos abordagens diretas e ofertas de escassez. Para as áreas de intensidade "MEDIUM", invista em conteúdo educativo para nutrir os leads que ainda estão em fase de pesquisa.</p>
-                            </div>
-                        </div>
-                    </div>
-                `;
-            }
-
-            // Gerar Seção de Modelos e Links Dinâmicos
-            let modelsHtml = '<div class="col-md-6"><div class="p-3 rounded border border-secondary border-opacity-20"><h6 class="text-muted small text-uppercase mb-3">Modelos Mais Pesquisados</h6><ul class="list-unstyled mb-0">';
-            popularModels.forEach(m => {
-                modelsHtml += `<li class="mb-2"><i class="bi bi-check2-circle text-primary me-2"></i> <strong>${m.name}</strong>: <span class="small text-muted">${m.reason}</span></li>`;
-            });
-            modelsHtml += '</ul></div></div>';
-
-            let linksHtml = '<div class="col-md-6"><div class="p-3 rounded border border-secondary border-opacity-20"><h6 class="text-muted small text-uppercase mb-3">Referências & Sites de Referência</h6><div class="d-grid gap-2">';
-            referenceLinks.forEach(l => {
-                linksHtml += `
-                    <a href="${l.url}" target="_blank" class="btn btn-sm btn-outline-primary text-start">
-                        <i class="bi bi-link-45deg me-2"></i>${l.title}
-                        <div class="x-small text-muted mt-1" style="font-size: 0.65rem;">${l.description}</div>
-                    </a>
-                `;
-            });
-            linksHtml += '</div></div></div>';
-            
-            popularModelsContent.innerHTML = modelsHtml + linksHtml;
 
             // Curva de Tendência (Simulando variação nos últimos 7 dias baseada na demanda atual)
             const labels = results.map(r => `${r.city} (${r.neighborhood})`);
