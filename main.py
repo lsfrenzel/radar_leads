@@ -157,6 +157,19 @@ HTML_TEMPLATE = """
         </div>
 
         <div id="dashboard" class="row mt-4" style="display: none;">
+                <!-- Seção de Análise de Resultados -->
+                <div class="col-12 mb-4">
+                    <div class="glass-card p-4 border-primary">
+                        <h4 class="mb-3 text-primary"><i class="bi bi-lightbulb me-2"></i>Análise dos Resultados & Recomendações</h4>
+                        <div id="aiAnalysisContent" class="text-main">
+                            <div class="d-flex align-items-center">
+                                <div class="spinner-border spinner-border-sm text-primary me-2" role="status"></div>
+                                <span class="small text-muted">Gerando insights estratégicos...</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <div class="col-12 mb-4">
                     <div class="glass-card p-4">
                         <h4 class="mb-4 text-center"><i class="bi bi-graph-up text-primary me-2"></i>Curva de Tendência de Mercado (SP)</h4>
@@ -298,10 +311,36 @@ HTML_TEMPLATE = """
             const dashboard = document.getElementById('dashboard');
             const legend = document.getElementById('legend');
             const exportControls = document.getElementById('exportControls');
+            const aiAnalysisContent = document.getElementById('aiAnalysisContent');
             
             dashboard.style.display = 'flex';
             legend.style.display = 'block';
             exportControls.style.display = 'block';
+
+            // Gerar análise estratégica baseada nos dados
+            const topLocation = results[0];
+            const highIntensityCount = results.filter(r => r.intensity === 'high').length;
+            const totalDemand = results.reduce((acc, r) => acc + r.demand_percentage, 0).toFixed(1);
+
+            aiAnalysisContent.innerHTML = `
+                <div class="mb-3">
+                    <p>Com base na varredura realizada, detectamos um volume crítico de interesse em <strong>${topLocation.city} (${topLocation.neighborhood})</strong>, que lidera com <strong>${topLocation.demand_percentage}%</strong> da demanda estadual. Identificamos <strong>${highIntensityCount} áreas de alta intensidade</strong> onde o ciclo de decisão de compra está em estágio avançado.</p>
+                </div>
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <div class="p-3 rounded bg-primary bg-opacity-10 border border-primary border-opacity-20 h-100">
+                            <h6 class="text-primary"><i class="bi bi-rocket-takeoff me-2"></i>Oportunidade de Ouro</h6>
+                            <p class="small mb-0">Focar campanhas geolocalizadas em <strong>${topLocation.city}</strong>. A tendência é de <strong>${topLocation.trend === 'up' ? 'alta aceleração' : 'estabilidade sólida'}</strong>, sugerindo que o custo de aquisição (CAC) tende a ser menor nessas regiões agora.</p>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="p-3 rounded bg-success bg-opacity-10 border border-success border-opacity-20 h-100">
+                            <h6 class="text-success"><i class="bi bi-graph-up-arrow me-2"></i>Estratégia de Vendas</h6>
+                            <p class="small mb-0">Para as áreas com intensidade "HIGH", recomendamos abordagens diretas e ofertas de escassez. Para as áreas de intensidade "MEDIUM", invista em conteúdo educativo para nutrir os leads que ainda estão em fase de pesquisa.</p>
+                        </div>
+                    </div>
+                </div>
+            `;
 
             // Curva de Tendência (Simulando variação nos últimos 7 dias baseada na demanda atual)
             const labels = results.map(r => `${r.city} (${r.neighborhood})`);
