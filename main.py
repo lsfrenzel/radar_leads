@@ -228,7 +228,7 @@ HTML_TEMPLATE = """
         <div class="glass-card p-4">
             <form id="trendsForm">
                 <div class="row g-3">
-                    <div class="col-md-8">
+                    <div class="col-md-5">
                         <label class="small text-muted mb-2">REGIÃO DE SÃO PAULO</label>
                         <select class="form-select" id="region">
                             <option value="todas">Todas as Regiões</option>
@@ -248,7 +248,12 @@ HTML_TEMPLATE = """
                             <option value="bairro:jardins">Jardins</option>
                         </select>
                     </div>
-                    <div class="col-md-4 d-flex align-items-end">
+                    <div class="col-md-4">
+                        <label class="small text-muted mb-2">CEP (OPCIONAL - VARREDURA LOCAL)</label>
+                        <input type="text" class="form-control" id="cep" placeholder="Ex: 01310-100" maxlength="9">
+                        <small class="text-muted">Informe o CEP para análise em torno dessa localização</small>
+                    </div>
+                    <div class="col-md-3 d-flex align-items-end">
                         <button type="submit" class="btn btn-primary w-100">
                             <i class="bi bi-graph-up-arrow me-2"></i>MAPEAR TENDÊNCIAS
                         </button>
@@ -489,18 +494,29 @@ HTML_TEMPLATE = """
         });
         {% elif active_page == 'tendencias' %}
         let regionChart = null;
+        
+        document.getElementById('cep').addEventListener('input', function(e) {
+            let value = e.target.value.replace(/\D/g, '');
+            if (value.length > 5) {
+                value = value.slice(0, 5) + '-' + value.slice(5, 8);
+            }
+            e.target.value = value;
+        });
+        
         document.getElementById('trendsForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             const region = document.getElementById('region').value;
+            const cep = document.getElementById('cep').value.replace(/\D/g, '');
             const resultsDiv = document.getElementById('trendsResults');
             const dashboard = document.getElementById('trendsDashboard');
-            resultsDiv.innerHTML = `<div class="loader-container"><div class="cyber-loader"><div></div><div></div><div></div></div><div class="loading-text">Analisando Big Data Regional...</div></div>`;
+            const loadingMsg = cep ? 'Analisando região do CEP ' + document.getElementById('cep').value + '...' : 'Analisando Big Data Regional...';
+            resultsDiv.innerHTML = `<div class="loader-container"><div class="cyber-loader"><div></div><div></div><div></div></div><div class="loading-text">${loadingMsg}</div></div>`;
             dashboard.style.display = 'none';
             try {
                 const response = await fetch('/api/trends', {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({ region })
+                    body: JSON.stringify({ region, cep: cep || null })
                 });
                 const data = await response.json();
                 resultsDiv.innerHTML = '';
@@ -552,11 +568,18 @@ def tendencias():
 @app.route("/api/trends", methods=["POST"])
 def get_trends():
     region = request.json.get('region')
+    cep = request.json.get('cep')
     
-    # Determinar o nome amigável da região/bairro
-    if region and region.startswith("bairro:"):
+    # Se CEP foi informado, priorizar a análise por CEP
+    if cep and len(cep) == 8:
+        cep_formatado = f"{cep[:5]}-{cep[5:]}"
+        contexto = f"região do CEP {cep_formatado} e arredores (raio de aproximadamente 5km)"
+        analise_extra = f"Considere que o CEP {cep_formatado} está localizado em São Paulo. " \
+                       f"Analise as tendências de consumo específicas para essa micro-região e bairros vizinhos. "
+    elif region and region.startswith("bairro:"):
         loc_nome = region.split(":")[1].replace("_", " ").title()
         contexto = f"bairro {loc_nome}"
+        analise_extra = ""
     else:
         mapeamento = {
             "todas": "Estado de São Paulo",
@@ -567,8 +590,10 @@ def get_trends():
         }
         loc_nome = mapeamento.get(region, "São Paulo")
         contexto = f"região {loc_nome}"
+        analise_extra = ""
 
     prompt = f"Gere uma análise de tendências de consumo EM TEMPO REAL para a {contexto} em São Paulo (Jan 2026). " \
+             f"{analise_extra}" \
              f"Seja extremamente específico sobre o que as pessoas estão buscando agora nessa localidade. " \
              f"Retorne 4 produtos/serviços 'hot' com categoria, porcentagem de crescimento e um link de referência (ex: busca no Google Shopping ou site de notícias relevante). " \
              f"e a distribuição de interesse por sub-áreas/bairros da localidade em 5 pontos." \
