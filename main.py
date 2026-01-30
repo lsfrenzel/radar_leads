@@ -19,22 +19,141 @@ HTML_TEMPLATE = """
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         :root {
             --bg-dark: #020617;
             --card-bg: #0f172a;
             --accent: #3b82f6;
+            --accent-secondary: #8b5cf6;
             --accent-glow: rgba(59, 130, 246, 0.5);
+            --accent-glow-purple: rgba(139, 92, 246, 0.4);
             --text-main: #f8fafc;
             --text-muted: #94a3b8;
+            --cyber-green: #00ff88;
+            --cyber-cyan: #00d4ff;
         }
         body { background-color: var(--bg-dark); color: var(--text-main); font-family: 'Inter', system-ui, sans-serif; overflow-x: hidden; }
-        .navbar { background: rgba(15, 23, 42, 0.8); backdrop-filter: blur(10px); border-bottom: 1px solid rgba(255,255,255,0.05); }
-        .nav-link { color: var(--text-muted) !important; font-weight: 500; transition: all 0.3s; }
-        .nav-link:hover, .nav-link.active { color: var(--accent) !important; }
+        
+        .navbar { 
+            background: linear-gradient(180deg, rgba(15, 23, 42, 0.95) 0%, rgba(15, 23, 42, 0.85) 100%);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid rgba(59, 130, 246, 0.15);
+            padding: 1rem 0;
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.3), 0 0 40px rgba(59, 130, 246, 0.05);
+        }
+        .navbar-brand {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 1.5rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #00d4ff 0%, #3b82f6 50%, #8b5cf6 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            letter-spacing: 2px;
+            position: relative;
+            padding-left: 35px;
+        }
+        .navbar-brand::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 24px;
+            height: 24px;
+            background: linear-gradient(135deg, #00d4ff, #3b82f6);
+            border-radius: 6px;
+            box-shadow: 0 0 15px rgba(0, 212, 255, 0.5);
+        }
+        .navbar-brand::after {
+            content: '';
+            position: absolute;
+            left: 6px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 12px;
+            height: 12px;
+            border: 2px solid rgba(255,255,255,0.9);
+            border-radius: 3px;
+        }
+        .nav-link { 
+            color: var(--text-muted) !important; 
+            font-weight: 500; 
+            font-size: 0.9rem;
+            letter-spacing: 0.5px;
+            padding: 0.6rem 1.2rem !important;
+            margin: 0 0.2rem;
+            border-radius: 8px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+        .nav-link::before {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 0;
+            height: 2px;
+            background: linear-gradient(90deg, #00d4ff, #3b82f6, #8b5cf6);
+            transition: width 0.3s ease;
+            border-radius: 2px;
+        }
+        .nav-link:hover::before, .nav-link.active::before {
+            width: 80%;
+        }
+        .nav-link:hover { 
+            color: #fff !important;
+            background: rgba(59, 130, 246, 0.1);
+        }
+        .nav-link.active { 
+            color: #fff !important;
+            background: rgba(59, 130, 246, 0.15);
+        }
+        
         .glass-card { background: var(--card-bg); border: 1px solid rgba(255,255,255,0.05); border-radius: 16px; box-shadow: 0 4px 30px rgba(0, 0, 0, 0.5); backdrop-filter: blur(10px); transition: all 0.3s ease; }
         .glass-card:hover { border-color: var(--accent); }
-        .hero-title { background: linear-gradient(135deg, #fff 0%, #3b82f6 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-weight: 800; font-size: 2.5rem; }
+        
+        .hero-section {
+            position: relative;
+            padding: 2rem 0;
+        }
+        .hero-section::before {
+            content: '';
+            position: absolute;
+            top: -100px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 600px;
+            height: 600px;
+            background: radial-gradient(circle, rgba(59, 130, 246, 0.15) 0%, rgba(139, 92, 246, 0.1) 30%, transparent 70%);
+            pointer-events: none;
+            z-index: -1;
+        }
+        .hero-title { 
+            font-family: 'Space Grotesk', sans-serif;
+            background: linear-gradient(135deg, #fff 0%, #00d4ff 40%, #3b82f6 70%, #8b5cf6 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            font-weight: 700;
+            font-size: 3rem;
+            letter-spacing: -1px;
+            text-shadow: 0 0 80px rgba(59, 130, 246, 0.5);
+            margin-bottom: 0.5rem;
+        }
+        .hero-subtitle {
+            color: var(--text-muted);
+            font-size: 1.1rem;
+            font-weight: 400;
+            letter-spacing: 0.5px;
+        }
+        .hero-subtitle span {
+            color: var(--accent);
+            font-weight: 500;
+        }
         .btn-primary { background: var(--accent); border: none; padding: 12px 24px; border-radius: 12px; font-weight: 600; box-shadow: 0 0 20px var(--accent-glow); transition: all 0.3s; }
         .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 0 30px var(--accent-glow); background: #2563eb; }
         .form-control, .form-select { background: #1e293b; border: 1px solid #334155; color: #fff; border-radius: 10px; padding: 12px; }
@@ -106,9 +225,9 @@ HTML_TEMPLATE = """
 
     <div class="container py-5">
         {% if active_page == 'leads' %}
-        <div class="text-center mb-5">
+        <div class="hero-section text-center mb-5">
             <h1 class="hero-title">Radar de Leads SP</h1>
-            <p class="text-muted">Inteligência de Mercado em Tempo Real para o Estado de São Paulo</p>
+            <p class="hero-subtitle">Inteligência de Mercado em <span>Tempo Real</span> para o Estado de São Paulo</p>
         </div>
         
         <div class="glass-card p-4">
@@ -223,9 +342,9 @@ HTML_TEMPLATE = """
                 </div>
         </div>
         {% elif active_page == 'tendencias' %}
-        <div class="text-center mb-5">
+        <div class="hero-section text-center mb-5">
             <h1 class="hero-title">Radar de Tendências SP</h1>
-            <p class="text-muted">Produtos e Categorias em Ascensão por Região</p>
+            <p class="hero-subtitle">Produtos e Categorias em <span>Ascensão</span> por Região</p>
         </div>
         
         <div class="glass-card p-4">
@@ -283,9 +402,9 @@ HTML_TEMPLATE = """
             </div>
         </div>
         {% elif active_page == 'nicho' %}
-        <div class="text-center mb-5">
+        <div class="hero-section text-center mb-5">
             <h1 class="hero-title">Radar por Nicho</h1>
-            <p class="text-muted">Inteligência de Mercado por Segmento de Negócio</p>
+            <p class="hero-subtitle">Inteligência de Mercado por <span>Segmento de Negócio</span></p>
         </div>
         
         <div class="glass-card p-4 mb-4">
