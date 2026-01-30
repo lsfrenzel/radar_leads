@@ -528,7 +528,7 @@ HTML_TEMPLATE = """
             <p id="modalBody"></p>
           </div>
           <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" data-bs-modal="dismiss">Fechar</button>
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
           </div>
         </div>
       </div>
@@ -717,11 +717,61 @@ HTML_TEMPLATE = """
                     body: JSON.stringify({ product, days })
                 });
                 const data = await response.json();
-                resultsDiv.innerHTML = '';
-                legend.style.display = 'block';
-                exportControls.style.display = 'block';
-                dashboard.style.display = 'flex';
-                updateDashboard(data);
+            resultsDiv.innerHTML = '';
+            legend.style.display = 'block';
+            exportControls.style.display = 'block';
+            dashboard.style.display = 'flex';
+            
+            // Render basic results table
+            let tableHtml = `
+                <div class="glass-card p-4">
+                    <h5 class="mb-3 text-primary"><i class="bi bi-list-stars me-2"></i>Intelligence Feed (Estratificado)</h5>
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Cidade / Bairro</th>
+                                    <th>Demanda</th>
+                                    <th>Tendência</th>
+                                    <th>Intensidade</th>
+                                    <th>Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+            `;
+            
+            data.stratified_data.forEach(item => {
+                const trendIcon = item.trend === 'up' ? '↗️' : (item.trend === 'down' ? '↘️' : '➡️');
+                const intensityClass = `intensity-${item.intensity}`;
+                tableHtml += `
+                    <tr>
+                        <td>
+                            <div class="fw-bold text-white">${item.city}</div>
+                            <small class="text-muted">${item.neighborhood}</small>
+                        </td>
+                        <td>
+                            <div class="d-flex align-items-center">
+                                <div class="progress w-100 me-2" style="height: 6px; background: rgba(255,255,255,0.1);">
+                                    <div class="progress-bar" style="width: ${item.demand_percentage}%; background: var(--accent);"></div>
+                                </div>
+                                <span class="small">${item.demand_percentage}%</span>
+                            </div>
+                        </td>
+                        <td><span class="trend-badge trend-${item.trend}">${trendIcon} ${item.trend.toUpperCase()}</span></td>
+                        <td><span class="intensity-pill ${intensityClass}">${item.intensity.toUpperCase()}</span></td>
+                        <td>
+                            <button class="btn btn-sm btn-outline-primary" onclick="showDetails('${item.city}', '${item.neighborhood}', '${item.sources.replace(/'/g, "\\'")}')">
+                                <i class="bi bi-info-circle"></i>
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            });
+            
+            tableHtml += `</tbody></table></div></div>`;
+            resultsDiv.innerHTML = tableHtml;
+
+            updateDashboard(data);
             } catch (err) {
                 resultsDiv.innerHTML = '<div class="alert alert-danger">Erro ao processar inteligência.</div>';
             }
