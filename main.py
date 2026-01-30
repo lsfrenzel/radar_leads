@@ -158,6 +158,26 @@ HTML_TEMPLATE = """
         .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 0 30px var(--accent-glow); background: #2563eb; }
         .form-control, .form-select { background: #1e293b; border: 1px solid #334155; color: #fff; border-radius: 10px; padding: 12px; }
         .form-control:focus, .form-select:focus { background: #1e293b; color: #fff; border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-glow); }
+        .form-control::placeholder { color: #64748b; opacity: 1; font-weight: 400; }
+        .form-control::-webkit-input-placeholder { color: #64748b; }
+        .form-control::-moz-placeholder { color: #64748b; }
+        .form-control:-ms-input-placeholder { color: #64748b; }
+        
+        .chart-responsive-container { 
+            position: relative; 
+            min-height: 280px;
+            width: 100%;
+            overflow: visible;
+        }
+        .chart-responsive-container canvas {
+            max-width: 100%;
+            height: auto !important;
+        }
+        @media (max-width: 768px) {
+            .chart-responsive-container {
+                min-height: 250px;
+            }
+        }
         
         .loader-container { padding: 60px 0; text-align: center; }
         .cyber-loader { position: relative; width: 100px; height: 100px; margin: 0 auto 30px; }
@@ -480,7 +500,7 @@ HTML_TEMPLATE = """
                 <div class="col-md-6">
                     <div class="glass-card p-4">
                         <h5 class="text-primary mb-3"><i class="bi bi-bar-chart me-2"></i>Produtos/Serviços em Destaque</h5>
-                        <div style="position: relative; height:280px;">
+                        <div class="chart-responsive-container">
                             <canvas id="nichoChart"></canvas>
                         </div>
                     </div>
@@ -878,10 +898,23 @@ HTML_TEMPLATE = """
                         indexAxis: 'y',
                         responsive: true,
                         maintainAspectRatio: false,
+                        layout: {
+                            padding: { left: 10, right: 20 }
+                        },
                         plugins: { legend: { display: false } },
                         scales: {
                             x: { grid: { color: 'rgba(255,255,255,0.1)' }, ticks: { color: '#fff' } },
-                            y: { grid: { display: false }, ticks: { color: '#fff' } }
+                            y: { 
+                                grid: { display: false }, 
+                                ticks: { 
+                                    color: '#fff',
+                                    font: { size: 11 },
+                                    callback: function(value, index, values) {
+                                        const label = this.getLabelForValue(value);
+                                        return label.length > 20 ? label.substring(0, 18) + '...' : label;
+                                    }
+                                }
+                            }
                         }
                     }
                 });
