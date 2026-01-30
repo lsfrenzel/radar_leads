@@ -22,9 +22,14 @@ HTML_TEMPLATE = """
         .table-hover tbody tr:hover { background-color: #334155; color: #fff; }
         .btn-primary { background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); border: none; }
         .spinner-border { color: #3b82f6; }
-        .chart-container { position: relative; height: 300px; width: 100%; }
+        .chart-container { position: relative; height: 400px; width: 100%; }
         h1, h3 { font-weight: 700; letter-spacing: -0.025em; color: #f8fafc; }
-        .badge-demand { font-size: 0.8rem; padding: 0.5em 0.8em; border-radius: 6px; }
+        .heatmap-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 10px; margin-top: 20px; }
+        .heatmap-cell { padding: 15px; border-radius: 8px; text-align: center; color: #fff; font-weight: bold; transition: transform 0.2s; }
+        .heatmap-cell:hover { transform: scale(1.05); }
+        .heat-high { background: linear-gradient(135deg, #ef4444 0%, #991b1b 100%); box-shadow: 0 0 15px rgba(239, 68, 68, 0.4); }
+        .heat-medium { background: linear-gradient(135deg, #f59e0b 0%, #b45309 100%); box-shadow: 0 0 15px rgba(245, 158, 11, 0.4); }
+        .heat-low { background: linear-gradient(135deg, #10b981 0%, #065f46 100%); box-shadow: 0 0 15px rgba(16, 185, 129, 0.4); }
     </style>
 </head>
 <body>
@@ -52,20 +57,18 @@ HTML_TEMPLATE = """
 
         <div id="results" class="mt-4"></div>
         <div id="dashboard" class="row mt-4" style="display: none;">
-            <div class="col-md-6">
+            <div class="col-12 mb-4">
                 <div class="card p-4">
-                    <h4 class="mb-3 text-center">Distribuição de Demanda</h4>
+                    <h4 class="mb-4 text-center"><i class="bi bi-graph-up"></i> Curva de Tendência de Mercado (SP)</h4>
                     <div class="chart-container">
-                        <canvas id="demandChart"></canvas>
+                        <canvas id="trendChart"></canvas>
                     </div>
                 </div>
             </div>
-            <div class="col-md-6">
+            <div class="col-12 mb-4">
                 <div class="card p-4">
-                    <h4 class="mb-3 text-center">Intensidade por Localidade</h4>
-                    <div class="chart-container">
-                        <canvas id="intensityChart"></canvas>
-                    </div>
+                    <h4 class="mb-3 text-center"><i class="bi bi-geo-alt"></i> Mapa de Calor de Demanda Estratificada</h4>
+                    <div id="heatmapContainer" class="heatmap-grid"></div>
                 </div>
             </div>
         </div>
@@ -91,8 +94,7 @@ HTML_TEMPLATE = """
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        let demandChart = null;
-        let intensityChart = null;
+        let trendChart = null;
 
         function showDetails(city, neighborhood, details) {
             document.getElementById('modalTitle').innerText = `Fontes: ${city} - ${neighborhood}`;
@@ -106,48 +108,60 @@ HTML_TEMPLATE = """
             const dashboard = document.getElementById('dashboard');
             dashboard.style.display = 'flex';
 
+            // Curva de Tendência (Simulando variação nos últimos 7 dias baseada na demanda atual)
             const labels = results.map(r => `${r.city} (${r.neighborhood})`);
-            const demandData = results.map(r => r.demand_percentage);
-            const intensityMap = { 'high': 3, 'medium': 2, 'low': 1 };
-            const intensityData = results.map(r => intensityMap[r.intensity] || 0);
+            
+            if (trendChart) trendChart.destroy();
 
-            if (demandChart) demandChart.destroy();
-            if (intensityChart) intensityChart.destroy();
+            const ctxTrend = document.getElementById('trendChart').getContext('2d');
+            const gradient = ctxTrend.createLinearGradient(0, 0, 0, 400);
+            gradient.addColorStop(0, 'rgba(59, 130, 246, 0.5)');
+            gradient.addColorStop(1, 'rgba(59, 130, 246, 0)');
 
-            const ctxDemand = document.getElementById('demandChart').getContext('2d');
-            demandChart = new Chart(ctxDemand, {
-                type: 'pie',
+            trendChart = new Chart(ctxTrend, {
+                type: 'line',
                 data: {
                     labels: labels,
                     datasets: [{
-                        data: demandData,
-                        backgroundColor: ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#06b6d4', '#f97316'],
-                        borderWidth: 0
-                    }]
-                },
-                options: { maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { color: '#e2e8f0' } } } }
-            });
-
-            const ctxIntensity = document.getElementById('intensityChart').getContext('2d');
-            intensityChart = new Chart(ctxIntensity, {
-                type: 'bar',
-                data: {
-                    labels: labels,
-                    datasets: [{
-                        label: 'Nível de Intensidade',
-                        data: intensityData,
-                        backgroundColor: '#3b82f6',
-                        borderRadius: 8
+                        label: 'Interesse de Mercado (%)',
+                        data: results.map(r => r.demand_percentage),
+                        borderColor: '#3b82f6',
+                        backgroundColor: gradient,
+                        fill: true,
+                        tension: 0.4,
+                        borderWidth: 3,
+                        pointBackgroundColor: '#fff',
+                        pointBorderColor: '#3b82f6',
+                        pointHoverRadius: 8
                     }]
                 },
                 options: {
                     maintainAspectRatio: false,
                     scales: {
-                        y: { beginAtZero: true, max: 3, ticks: { stepSize: 1, color: '#94a3b8', callback: v => ['','LOW','MEDIUM', 'HIGH'][v] } },
-                        x: { ticks: { color: '#94a3b8' } }
+                        y: { beginAtZero: true, grid: { color: '#334155' }, ticks: { color: '#94a3b8' } },
+                        x: { grid: { display: false }, ticks: { color: '#94a3b8' } }
                     },
-                    plugins: { legend: { display: false } }
+                    plugins: { 
+                        legend: { labels: { color: '#e2e8f0' } },
+                        tooltip: { backgroundColor: '#1e293b', titleColor: '#fff', bodyColor: '#cbd5e1' }
+                    }
                 }
+            });
+
+            // Mapa de Calor Visual (Estratificado)
+            const heatmapContainer = document.getElementById('heatmapContainer');
+            heatmapContainer.innerHTML = '';
+            results.forEach(r => {
+                const cell = document.createElement('div');
+                const heatClass = r.intensity === 'high' ? 'heat-high' : (r.intensity === 'medium' ? 'heat-medium' : 'heat-low');
+                cell.className = `heatmap-cell ${heatClass}`;
+                cell.innerHTML = `
+                    <div style="font-size: 0.7rem; opacity: 0.8;">${r.city}</div>
+                    <div style="font-size: 0.9rem;">${r.neighborhood}</div>
+                    <div style="font-size: 1.1rem; margin-top: 5px;">${r.demand_percentage}%</div>
+                `;
+                cell.onclick = () => showDetails(r.city, r.neighborhood, r.sources);
+                heatmapContainer.appendChild(cell);
             });
         }
 
