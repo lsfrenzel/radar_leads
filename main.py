@@ -53,7 +53,11 @@ HTML_TEMPLATE = """
         .modal-footer { border-top: 1px solid rgba(255,255,255,0.1); }
         .btn-close { filter: invert(1) grayscale(100%) brightness(200%); }
         .heatmap-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 15px; }
-        .heatmap-cell { border: 1px solid rgba(255,255,255,0.05); cursor: pointer; }
+        .heatmap-cell { padding: 15px; border-radius: 8px; text-align: center; color: #fff; font-weight: bold; transition: transform 0.2s; border: 1px solid rgba(255,255,255,0.05); cursor: pointer; }
+        .heatmap-cell:hover { transform: scale(1.05); }
+        .heat-high { background: linear-gradient(135deg, #ef4444 0%, #991b1b 100%); box-shadow: 0 0 15px rgba(239, 68, 68, 0.4); }
+        .heat-medium { background: linear-gradient(135deg, #f59e0b 0%, #b45309 100%); box-shadow: 0 0 15px rgba(245, 158, 11, 0.4); }
+        .heat-low { background: linear-gradient(135deg, #10b981 0%, #065f46 100%); box-shadow: 0 0 15px rgba(16, 185, 129, 0.4); }
     </style>
 </head>
 <body>
