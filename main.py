@@ -2,6 +2,7 @@ from flask import Flask, request, jsonify, render_template_string
 from engine import MarketIntelligenceEngine
 import os
 import re
+import json
 
 app = Flask(__name__)
 engine = MarketIntelligenceEngine()
@@ -288,7 +289,7 @@ HTML_TEMPLATE = """
             <p id="modalBody"></p>
           </div>
           <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+            <button type="button" class="btn btn-secondary" data-bs-modal="dismiss">Fechar</button>
           </div>
         </div>
       </div>
@@ -545,8 +546,7 @@ def tendencias():
 def get_trends():
     region = request.json.get('region')
     
-    # Se for um bairro específico, usamos a IA para gerar tendências contextuais
-    if region.startswith("bairro:"):
+    if region and region.startswith("bairro:"):
         bairro_nome = region.split(":")[1].replace("_", " ").title()
         
         prompt = f"Gere uma análise de tendências de consumo EM TEMPO REAL para o bairro {bairro_nome} em São Paulo (Jan 2026). " \
@@ -557,18 +557,18 @@ def get_trends():
         
         try:
             from engine import client, MODEL
-            import json
             response = client.chat.completions.create(
                 model=MODEL,
                 messages=[{"role": "user", "content": prompt}],
                 response_format={"type": "json_object"},
                 timeout=60.0
             )
-            data = json.loads(response.choices[0].message.content)
-            return jsonify(data)
+            content = response.choices[0].message.content
+            if content:
+                data = json.loads(content)
+                return jsonify(data)
         except Exception as e:
             print(f"Erro na IA de tendências: {e}")
-            # Fallback dinâmico para garantir que o usuário veja algo
             return jsonify({
                 "hot_products": [
                     {"name": f"Delivery Premium em {bairro_nome}", "category": "Gastronomia", "growth": 45},
@@ -585,7 +585,6 @@ def get_trends():
                 ]
             })
 
-    # Simulação padrão para regiões maiores
     return jsonify({
         "hot_products": [
             {"name": "Ar Condicionado Inverter", "category": "Eletro", "growth": 45},
